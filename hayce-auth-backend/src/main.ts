@@ -26,7 +26,7 @@ async function bootstrap() {
       'http://localhost:4200',
       'http://127.0.0.1:4200',
       'https://studio.apollographql.com',
-      'https://hayce-auth-frontend.onrender.com',
+      'https://hayce-frontend.onrender.com',
     ].join(',')
   )
     .split(',')
