@@ -1,0 +1,79 @@
+<!-- ================================================ -->
+<!-- [ ACCESO RESTRINGIDO ] - ESTADO DE PERMISOS      -->
+<!-- ================================================ -->
+<section class="mx-auto flex min-h-[calc(100vh-12rem)] w-full max-w-5xl items-center justify-center px-4 py-8 sm:px-6 lg:px-8">
+  <div class="w-full max-w-3xl rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8 lg:p-10">
+    <!-- ================================================ -->
+    <!-- [ CABECERA ] - MENSAJE PRINCIPAL                 -->
+    <!-- ================================================ -->
+    <div class="flex flex-col gap-5 md:flex-row md:items-start md:justify-between">
+      <div class="flex items-start gap-4">
+        <div class="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-red-50 text-red-600">
+          <span class="material-symbols-outlined text-[28px]">lock</span>
+        </div>
+
+        <div class="space-y-3">
+          <span class="inline-flex rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-slate-600">
+            Acceso restringido
+          </span>
+
+          <div class="space-y-2">
+            <h1 class="text-2xl font-semibold tracking-tight text-slate-900 sm:text-3xl">
+              No tienes permisos para acceder a esta sección
+            </h1>
+            <p class="max-w-2xl text-sm leading-6 text-slate-500 sm:text-base">
+              Tu sesión está activa, pero el rol actual no autoriza esta vista. El sistema bloqueó el acceso para mantener la seguridad operativa.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================================================ -->
+    <!-- [ DETALLE ] - CONTEXTO DE LA RESTRICCION         -->
+    <!-- ================================================ -->
+    <div class="mt-8 grid gap-4 md:grid-cols-2">
+      <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+        <p class="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Ruta solicitada</p>
+        <p class="mt-2 text-sm font-medium text-slate-900">{{ blockedRoute() }}</p>
+      </div>
+
+      <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+        <p class="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Validación</p>
+        <p class="mt-2 text-sm font-medium text-slate-900">Permisos insuficientes para renderizar esta pantalla.</p>
+      </div>
+    </div>
+
+    <!-- ================================================ -->
+    <!-- [ PERMISOS ] - REQUISITOS DE LA RUTA             -->
+    <!-- ================================================ -->
+    <div class="mt-6 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+      <p class="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Permisos requeridos</p>
+
+      <div class="mt-3 flex flex-wrap gap-2" *ngIf="requiredPermissions().length > 0; else permissionFallback">
+        <span
+          *ngFor="let permission of requiredPermissions()"
+          class="inline-flex items-center rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-medium text-slate-700"
+        >
+          {{ permission }}
+        </span>
+      </div>
+
+      <ng-template #permissionFallback>
+        <p class="mt-2 text-sm text-slate-500">Esta vista requiere permisos operativos definidos por tu rol actual.</p>
+      </ng-template>
+    </div>
+
+    <!-- ================================================ -->
+    <!-- [ ACCIONES ] - SALIDA SEGURA                     -->
+    <!-- ================================================ -->
+    <div class="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-end">
+      <app-button variant="outline" size="md" (onClick)="goBack()">
+        Volver al inicio
+      </app-button>
+      <app-button variant="primary" size="md" (onClick)="goHome()">
+        Ir al panel principal
+      </app-button>
+    </div>
+  </div>
+</section>

@@ -1,0 +1,76 @@
+/* [HAYCE] Global stylesheet and Tailwind CSS v4 configuration */
+@import "tailwindcss";
+
+@import "./styles/_tokens.css";
+@import "./styles/_typography.css";
+@import "./styles/_base.css";
+@import "./styles/_animations.css";
+
+@theme {
+  /* COLORS */
+  --color-hayce-bg-canvas: var(--hayce-bg-canvas);
+  --color-hayce-bg-elevated: var(--hayce-bg-elevated);
+  --color-hayce-bg-overlay: var(--hayce-bg-overlay);
+
+  --color-hayce-surface: var(--hayce-surface);
+  --color-hayce-surface-muted: var(--hayce-surface-muted);
+  --color-hayce-surface-strong: var(--hayce-surface-strong);
+
+  --color-hayce-border-subtle: var(--hayce-border-subtle);
+  --color-hayce-border-strong: var(--hayce-border-strong);
+  --color-hayce-border-accent: var(--hayce-border-accent);
+
+  --color-hayce-accent: var(--hayce-accent);
+  --color-hayce-accent-strong: var(--hayce-accent-strong);
+  --color-hayce-accent-soft: var(--hayce-accent-soft);
+  --color-hayce-accent-ring: var(--hayce-accent-ring);
+
+  --color-hayce-text-primary: var(--hayce-text-primary);
+  --color-hayce-text-secondary: var(--hayce-text-secondary);
+  --color-hayce-text-muted: var(--hayce-text-muted);
+  --color-hayce-text-disabled: var(--hayce-text-disabled);
+  --color-hayce-text-inverse: var(--hayce-text-inverse);
+
+  --color-hayce-success: var(--hayce-success);
+  --color-hayce-warning: var(--hayce-warning);
+  --color-hayce-danger: var(--hayce-danger);
+  --color-hayce-info: var(--hayce-info);
+
+  /* SPACING */
+  --spacing-hayce-1: var(--hayce-space-1);
+  --spacing-hayce-2: var(--hayce-space-2);
+  --spacing-hayce-3: var(--hayce-space-3);
+  --spacing-hayce-4: var(--hayce-space-4);
+  --spacing-hayce-5: var(--hayce-space-5);
+  --spacing-hayce-6: var(--hayce-space-6);
+  --spacing-hayce-8: var(--hayce-space-8);
+  --spacing-hayce-10: var(--hayce-space-10);
+  --spacing-hayce-12: var(--hayce-space-12);
+  --spacing-hayce-16: var(--hayce-space-16);
+  
+  --spacing-hayce-sidebar: var(--hayce-sidebar-width);
+  --spacing-hayce-topbar: var(--hayce-topbar-height);
+
+  /* FONTS */
+  --font-hayce-display: var(--hayce-font-display);
+  --font-hayce-body: var(--hayce-font-body);
+  --font-hayce-mono: var(--hayce-font-mono);
+
+  /* SHADOWS */
+  --shadow-hayce-sm: var(--hayce-shadow-sm);
+  --shadow-hayce-md: var(--hayce-shadow-md);
+  --shadow-hayce-lg: var(--hayce-shadow-lg);
+  --shadow-hayce-card: var(--hayce-shadow-card);
+  --shadow-hayce-glow: var(--hayce-shadow-glow);
+
+  /* RADII */
+  --radius-hayce-sm: var(--hayce-radius-sm);
+  --radius-hayce-md: var(--hayce-radius-md);
+  --radius-hayce-lg: var(--hayce-radius-lg);
+  --radius-hayce-card: var(--hayce-radius-card);
+  --radius-hayce-pill: var(--hayce-radius-pill);
+
+  /* EASE */
+  --ease-hayce-out: var(--hayce-ease-out);
+  --ease-hayce-standard: var(--hayce-ease-standard);
+}

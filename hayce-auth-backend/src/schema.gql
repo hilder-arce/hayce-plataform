@@ -1,0 +1,401 @@
+# ------------------------------------------------------
+# THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
+# ------------------------------------------------------
+
+type Activity {
+  createdAt: DateTime!
+  descripcion: String
+  estacion: Station
+  estado: Boolean!
+  id: ID!
+  nombre: String!
+  updatedAt: DateTime
+}
+
+input AdminChangePasswordDto {
+  passwordNuevo: String!
+}
+
+type AuthPermissionGroup {
+  modulo: String!
+  permisos: [String!]!
+}
+
+type AuthResponse {
+  data: AuthResponseData!
+  message: String!
+  status: String!
+}
+
+type AuthResponseData {
+  usuario: AuthUserProfile!
+}
+
+type AuthUserProfile {
+  createdAt: DateTime!
+  email: String!
+  estado: Boolean!
+  id: String!
+  nombre: String!
+  permisos: [AuthPermissionGroup!]!
+  rol: String
+}
+
+input ChangePasswordDto {
+  passwordActual: String!
+  passwordNuevo: String!
+}
+
+input CreateActivityDto {
+  descripcion: String!
+  estacion: String!
+  nombre: String!
+}
+
+input CreateModuleDto {
+  descripcion: String!
+  nombre: String!
+}
+
+input CreatePermissionDto {
+  descripcion: String!
+  modulo: String!
+  nombre: String!
+}
+
+input CreateRoleDto {
+  descripcion: String!
+  nombre: String!
+  permisos: [String!]
+}
+
+input CreateStationDto {
+  descripcion: String!
+  nombre: String!
+}
+
+input CreateTareoDto {
+  actividad: String!
+  chasis: String!
+  estacion: String!
+  estado_tareo: EstadoTareo
+  fecha: DateTime!
+  hora_fin: DateTime
+  hora_ini: DateTime!
+  numero_operacion: String!
+  observacion: String
+  trabajador: String!
+}
+
+input CreateUserDto {
+  email: String!
+  nombre: String!
+  password: String!
+  rol: String!
+}
+
+input CreateWorkerDto {
+  apellidos: String!
+  correo: String
+  nombres: String!
+  numero_telefono: String
+}
+
+"""
+A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date-time format.
+"""
+scalar DateTime
+
+"""Estados posibles de un tareo"""
+enum EstadoTareo {
+  EN_DESARROLLO
+  FINALIZADO
+  POR_INICIAR
+}
+
+input ForgotPasswordDto {
+  email: String!
+}
+
+input LoginDto {
+  dispositivo: String
+  email: String!
+  password: String!
+  ubicacion: String
+}
+
+type MessageResponse {
+  mensaje: String
+  message: String
+}
+
+type Module {
+  createdAt: DateTime!
+  descripcion: String
+  estado: Boolean!
+  id: ID!
+  nombre: String!
+  updatedAt: DateTime
+}
+
+type Mutation {
+  adminChangePassword(id: String!, input: AdminChangePasswordDto!): MessageResponse!
+  changeMyPassword(input: ChangePasswordDto!): MessageResponse!
+  createActivity(input: CreateActivityDto!): Activity!
+  createModule(input: CreateModuleDto!): Module!
+  createPermission(input: CreatePermissionDto!): Permission!
+  createRole(input: CreateRoleDto!): Role!
+  createStation(input: CreateStationDto!): Station!
+  createTareo(input: CreateTareoDto!): Tareo!
+  createUser(input: CreateUserDto!): User!
+  createWorker(input: CreateWorkerDto!): Worker!
+  forgotPassword(input: ForgotPasswordDto!): MessageResponse!
+  login(input: LoginDto!): AuthResponse!
+  logout: MessageResponse!
+  logoutAll: MessageResponse!
+  markAllNotificationsAsRead: MessageResponse!
+  markNotificationAsRead(id: String!): MessageResponse!
+  removeActivity(id: String!): Activity!
+  removeModule(id: String!): Module!
+  removeNotification(id: String!): MessageResponse!
+  removePermission(id: String!): Permission!
+  removeRole(id: String!): Role!
+  removeStation(id: String!): Station!
+  removeTareo(id: String!): Tareo!
+  removeUser(id: String!): User!
+  removeWorker(id: String!): Worker!
+  resetPassword(input: ResetPasswordDto!): MessageResponse!
+  restoreActivity(id: String!): Activity!
+  restoreModule(id: String!): Module!
+  restorePermission(id: String!): Permission!
+  restoreRole(id: String!): Role!
+  restoreStation(id: String!): Station!
+  restoreTareo(id: String!): Tareo!
+  restoreUser(id: String!): User!
+  restoreWorker(id: String!): Worker!
+  revokeSession(id: String!): MessageResponse!
+  updateActivity(id: String!, input: UpdateActivityDto!): Activity!
+  updateModule(id: String!, input: UpdateModuleDto!): Module!
+  updateMyProfile(input: UpdateUserDto!): User!
+  updatePermission(id: String!, input: UpdatePermissionDto!): Permission!
+  updateRole(id: String!, input: UpdateRoleDto!): Role!
+  updateStation(id: String!, input: UpdateStationDto!): Station!
+  updateTareo(id: String!, input: UpdateTareoDto!): Tareo!
+  updateUser(id: String!, input: UpdateUserDto!): User!
+  updateWorker(id: String!, input: UpdateWorkerDto!): Worker!
+  verifyCode(input: VerifyCodeDto!): MessageResponse!
+}
+
+type Notification {
+  createdAt: DateTime!
+  estado: Boolean!
+  id: ID!
+  leida: Boolean!
+  mensaje: String!
+  tipo: String!
+  titulo: String!
+  updatedAt: DateTime
+  usuario: User
+}
+
+type NotificationsPage {
+  items: [Notification!]!
+  page: Int!
+  pages: Int!
+  total: Int!
+}
+
+type Permission {
+  createdAt: DateTime!
+  descripcion: String
+  estado: Boolean!
+  id: ID!
+  modulo: Module
+  nombre: String!
+  updatedAt: DateTime
+}
+
+type Query {
+  activities: [Activity!]!
+  activitiesByStation(stationId: String!): [Activity!]!
+  activity(id: String!): Activity!
+  allSessions: [Session!]!
+  inactiveActivities: [Activity!]!
+  inactiveActivity(id: String!): Activity!
+  inactiveModule(id: String!): Module!
+  inactiveModules: [Module!]!
+  inactivePermission(id: String!): Permission!
+  inactivePermissions: [Permission!]!
+  inactiveRole(id: String!): Role!
+  inactiveRoles: [Role!]!
+  inactiveStation(id: String!): Station!
+  inactiveStations: [Station!]!
+  inactiveUser(id: String!): User!
+  inactiveUsers(limit: Int! = 10, page: Int! = 1, search: String): UsersPage!
+  inactiveWorker(id: String!): Worker!
+  inactiveWorkers: [Worker!]!
+  me: AuthUserProfile!
+  module(id: String!): Module!
+  modules: [Module!]!
+  myNotifications(limit: Int! = 10, page: Int! = 1, search: String): NotificationsPage!
+  mySessions: [Session!]!
+  permission(id: String!): Permission!
+  permissions: [Permission!]!
+  role(id: String!): Role!
+  roles: [Role!]!
+  station(id: String!): Station!
+  stations: [Station!]!
+  tareo(id: String!): Tareo!
+  tareos: [Tareo!]!
+  unreadNotifications: UnreadNotificationsCount!
+  user(id: String!): User!
+  users(limit: Int! = 10, page: Int! = 1, search: String): UsersPage!
+  worker(id: String!): Worker!
+  workers: [Worker!]!
+}
+
+input ResetPasswordDto {
+  codigo: String!
+  email: String!
+  password: String!
+}
+
+type Role {
+  createdAt: DateTime!
+  descripcion: String
+  estado: Boolean!
+  id: ID!
+  nombre: String!
+  permisos: [Permission!]!
+  updatedAt: DateTime
+}
+
+type Session {
+  bloqueado: Boolean!
+  bloqueadoEn: DateTime
+  createdAt: DateTime!
+  dispositivo: String!
+  estado: Boolean!
+  expiraEn: DateTime!
+  id: ID!
+  ip: String!
+  updatedAt: DateTime
+  usuario: User
+}
+
+type Station {
+  createdAt: DateTime!
+  descripcion: String
+  estado: Boolean!
+  id: ID!
+  nombre: String!
+  updatedAt: DateTime
+}
+
+type Tareo {
+  actividad: Activity!
+  chasis: String!
+  creado_por: User!
+  createdAt: DateTime!
+  estacion: String!
+  estado: Boolean!
+  estado_tareo: EstadoTareo!
+  fecha: DateTime!
+  hora_fin: DateTime
+  hora_ini: DateTime!
+  horas: Float!
+  id: ID!
+  numero_operacion: String!
+  observacion: String
+  trabajador: Worker!
+  updatedAt: DateTime
+}
+
+type UnreadNotificationsCount {
+  total: Int!
+}
+
+input UpdateActivityDto {
+  descripcion: String
+  estacion: String
+  nombre: String
+}
+
+input UpdateModuleDto {
+  descripcion: String
+  nombre: String
+}
+
+input UpdatePermissionDto {
+  descripcion: String
+  nombre: String
+}
+
+input UpdateRoleDto {
+  descripcion: String
+  nombre: String
+  permisos: [String!]
+  permisosEliminar: [String!]
+}
+
+input UpdateStationDto {
+  descripcion: String
+  nombre: String
+}
+
+input UpdateTareoDto {
+  actividad: String
+  chasis: String
+  estacion: String
+  estado_tareo: EstadoTareo
+  fecha: DateTime
+  hora_fin: DateTime
+  hora_ini: DateTime
+  numero_operacion: String
+  observacion: String
+  trabajador: String
+}
+
+input UpdateUserDto {
+  email: String
+  nombre: String
+  rol: String
+}
+
+input UpdateWorkerDto {
+  apellidos: String
+  correo: String
+  nombres: String
+  numero_telefono: String
+}
+
+type User {
+  createdAt: DateTime!
+  email: String!
+  estado: Boolean!
+  id: ID!
+  nombre: String!
+  rol: Role
+  updatedAt: DateTime
+}
+
+type UsersPage {
+  items: [User!]!
+  total: Int!
+}
+
+input VerifyCodeDto {
+  codigo: String!
+  email: String!
+}
+
+type Worker {
+  apellidos: String!
+  correo: String
+  createdAt: DateTime!
+  estado: Boolean!
+  id: ID!
+  nombres: String!
+  numero_telefono: String
+  updatedAt: DateTime
+}

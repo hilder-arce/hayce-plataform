@@ -1,0 +1,220 @@
+<!-- ================================================ -->
+<!-- [ PAGE HEADER ] - CONTEXTO Y NAVEGACION          -->
+<!-- ================================================ -->
+<div class="mb-6 flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+  <div class="flex items-start gap-3">
+    <a
+      routerLink="/dashboard/roles"
+      aria-label="Volver al listado de roles"
+      class="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-600 transition-colors hover:bg-slate-50 hover:text-slate-900"
+    >
+      <i class="icon text-xl">arrow_back</i>
+    </a>
+
+    <div class="space-y-2">
+      <h1 class="font-body text-3xl font-semibold tracking-tight text-slate-900 sm:text-[2rem]">
+        {{ isEditMode() ? 'Editar rol' : 'Nuevo rol' }}
+      </h1>
+      <p class="max-w-2xl text-sm leading-6 text-slate-500 sm:text-base">
+        {{ isEditMode()
+          ? 'Actualiza el perfil de acceso y manten su alcance operativo bajo control.'
+          : 'Crea un nuevo rol y define que capacidades del sistema estaran habilitadas.' }}
+      </p>
+    </div>
+  </div>
+</div>
+
+<!-- ================================================ -->
+<!-- [ FORM CARD ] - ESTRUCTURA PRINCIPAL             -->
+<!-- ================================================ -->
+<app-card [noPadding]="true">
+  @if (loading()) {
+    <!-- ================================================ -->
+    <!-- [ LOADING STATE ] - CARGA INICIAL                -->
+    <!-- ================================================ -->
+    <div class="flex min-h-80 flex-col items-center justify-center gap-4 px-6 py-16 text-center text-slate-500">
+      <app-spinner size="lg" />
+      <div class="space-y-1">
+        <p class="text-base font-medium text-slate-900">Preparando formulario</p>
+        <p class="text-sm">Cargando la informacion del rol.</p>
+      </div>
+    </div>
+  } @else {
+    <form [formGroup]="roleForm" (ngSubmit)="onSubmit()" class="space-y-0">
+      <!-- ================================================ -->
+      <!-- [ FORM BODY ] - IDENTIDAD DEL ROL                -->
+      <!-- ================================================ -->
+      <div class="border-b border-slate-200 px-5 py-5 sm:px-6 sm:py-6">
+        <div class="mb-6 flex flex-col gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-4 sm:flex-row sm:items-start">
+          <div class="flex h-11 w-11 items-center justify-center rounded-2xl bg-white text-blue-600 shadow-sm">
+            <i class="icon text-xl">shield</i>
+          </div>
+
+          <div class="space-y-1">
+            <h2 class="font-body text-lg font-semibold text-slate-900">Identidad del rol</h2>
+            <p class="text-sm leading-6 text-slate-500">
+              Define el nombre del perfil y resume el nivel de responsabilidad que tendra.
+            </p>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 gap-5 md:grid-cols-2">
+          <div>
+            <app-input
+              label="Nombre del rol"
+              icon="security"
+              placeholder="Ej. Supervisor"
+              formControlName="nombre"
+              [error]="getFieldError('nombre')"
+            />
+          </div>
+
+          <div class="md:col-span-2">
+            <label for="descripcion" class="mb-1.5 block text-sm font-medium text-slate-700">
+              Descripcion operativa
+            </label>
+
+            <textarea
+              id="descripcion"
+              rows="4"
+              formControlName="descripcion"
+              placeholder="Resume que controla este rol, a que equipo pertenece y cual es su alcance."
+              class="block w-full rounded-xl border bg-white px-4 py-3 text-sm text-slate-900 outline-none transition"
+              [class.border-orange-400]="getFieldError('descripcion')"
+              [class.border-slate-200]="!getFieldError('descripcion')"
+              [class.focus:border-orange-500]="getFieldError('descripcion')"
+              [class.focus:ring-2]="true"
+              [class.focus:ring-orange-100]="getFieldError('descripcion')"
+              [class.focus:ring-blue-100]="!getFieldError('descripcion')"
+              [class.focus:border-blue-500]="!getFieldError('descripcion')"
+            ></textarea>
+
+            @if (getFieldError('descripcion')) {
+              <p class="mt-1.5 flex items-center gap-1 text-xs text-orange-500">
+                <i class="icon text-[1.1em]">error</i>
+                {{ getFieldError('descripcion') }}
+              </p>
+            }
+          </div>
+        </div>
+      </div>
+
+      <!-- ================================================ -->
+      <!-- [ PERMISSIONS ] - SELECCION DE PERMISOS          -->
+      <!-- ================================================ -->
+      <div class="border-b border-slate-200 px-5 py-5 sm:px-6 sm:py-6">
+        <div class="mb-6 flex flex-col gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-4 sm:flex-row sm:items-start">
+          <div class="flex h-11 w-11 items-center justify-center rounded-2xl bg-white text-blue-600 shadow-sm">
+            <i class="icon text-xl">verified_user</i>
+          </div>
+
+          <div class="space-y-1">
+            <h2 class="font-body text-lg font-semibold text-slate-900">Permisos asignados</h2>
+            <p class="text-sm leading-6 text-slate-500">
+              Selecciona solo las capacidades que realmente debe tener este perfil.
+            </p>
+          </div>
+        </div>
+
+        <div class="mb-5 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div class="w-full md:max-w-sm">
+            <app-input
+              placeholder="Buscar permisos por nombre, modulo o descripcion..."
+              icon="search"
+              [ngModel]="permissionSearch()"
+              [ngModelOptions]="{ standalone: true }"
+              (ngModelChange)="onPermissionSearch($event)"
+            />
+          </div>
+
+          <div class="inline-flex items-center justify-center rounded-full border border-slate-200 bg-slate-50 px-4 py-2 text-sm text-slate-600">
+            <strong class="mr-1.5 font-semibold text-slate-900">{{ filteredPermissions().length }}</strong>
+            {{ filteredPermissions().length === 1 ? 'permiso visible' : 'permisos visibles' }}
+          </div>
+        </div>
+
+        @if (permissionsLoading()) {
+          <div class="flex items-center gap-3 text-sm text-slate-500">
+            <app-spinner size="sm" />
+            <span>Cargando permisos disponibles...</span>
+          </div>
+        } @else if (filteredPermissions().length === 0) {
+          <div class="flex min-h-56 flex-col items-center justify-center gap-4 rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-8 text-center">
+            <div class="flex h-14 w-14 items-center justify-center rounded-2xl bg-white text-slate-500">
+              <i class="icon text-2xl">search_off</i>
+            </div>
+            <div class="space-y-2">
+              <h3 class="font-body text-lg font-semibold text-slate-900">
+                No se encontraron permisos
+              </h3>
+              <p class="max-w-lg text-sm leading-6 text-slate-500">
+                Prueba con otro termino de busqueda o ajusta el filtro actual.
+              </p>
+            </div>
+          </div>
+        } @else {
+          <div class="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+            @for (permission of filteredPermissions(); track permission._id) {
+              <button
+                type="button"
+                class="flex w-full items-start justify-between gap-4 rounded-2xl border p-4 text-left transition"
+                [class.border-blue-300]="isPermissionSelected(permission._id)"
+                [class.bg-blue-50]="isPermissionSelected(permission._id)"
+                [class.border-slate-200]="!isPermissionSelected(permission._id)"
+                [class.bg-white]="!isPermissionSelected(permission._id)"
+                (click)="togglePermission(permission._id)"
+              >
+                <div class="min-w-0 space-y-2">
+                  <div class="flex flex-wrap items-center gap-2">
+                    <span class="font-body text-sm font-semibold text-slate-900">
+                      {{ permission.nombre }}
+                    </span>
+                    <span class="inline-flex items-center rounded-full bg-blue-50 px-2.5 py-1 text-[11px] font-semibold text-blue-600">
+                      {{ getModuleName(permission) }}
+                    </span>
+                  </div>
+
+                  <p class="text-sm leading-6 text-slate-500">
+                    {{ permission.descripcion }}
+                  </p>
+                </div>
+
+                <i class="icon shrink-0 text-lg text-blue-600">
+                  {{ isPermissionSelected(permission._id) ? 'check_circle' : 'radio_button_unchecked' }}
+                </i>
+              </button>
+            }
+          </div>
+        }
+      </div>
+
+      <!-- ================================================ -->
+      <!-- [ FORM FOOTER ] - ACCIONES DE ENVIO              -->
+      <!-- ================================================ -->
+      <div class="flex flex-col gap-4 px-5 py-5 sm:px-6 sm:py-6 md:flex-row md:items-center md:justify-between">
+        <p class="text-sm leading-6 text-slate-500">
+          Los permisos seleccionados definiran el acceso disponible para este rol.
+        </p>
+
+        <div class="flex w-full flex-col-reverse gap-3 sm:flex-row sm:justify-end md:w-auto">
+          <a
+            routerLink="/dashboard/roles"
+            class="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50 hover:text-slate-900"
+          >
+            Cancelar
+          </a>
+
+          <app-button
+            type="submit"
+            variant="primary"
+            [loading]="loading()"
+            [disabled]="loading() || permissionsLoading()"
+            class="w-full sm:w-auto"
+          >
+            {{ isEditMode() ? 'Guardar cambios' : 'Crear rol' }}
+          </app-button>
+        </div>
+      </div>
+    </form>
+  }
+</app-card>

@@ -1,0 +1,157 @@
+<div class="max-w-5xl mx-auto space-y-6">
+  <div class="flex items-center gap-4">
+    <app-button
+      variant="ghost"
+      routerLink="/dashboard/tareos"
+      icon="arrow_back"
+      size="sm"
+    />
+
+    <div>
+      <h1 class="text-2xl font-bold tracking-tight text-slate-900">
+        {{ isEdit() ? 'Editar Tareo' : 'Nuevo Tareo' }}
+      </h1>
+      <p class="text-sm text-slate-500">
+        {{ isEdit()
+          ? 'Actualiza la informacion operativa del tareo seleccionado.'
+          : 'Registra una nueva operacion asignando estacion, actividad, trabajador y horarios.' }}
+      </p>
+    </div>
+  </div>
+
+  @if (loading()) {
+    <div class="flex min-h-[400px] items-center justify-center">
+      <app-spinner size="lg" label="Cargando informacion..." />
+    </div>
+  } @else {
+    <app-card>
+      <form [formGroup]="form" (ngSubmit)="onSubmit()" class="space-y-6 p-6">
+        <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
+          <app-select
+            formControlName="trabajador"
+            label="Trabajador"
+            placeholder="Selecciona un trabajador"
+            [options]="workerOptions()"
+            [error]="getFieldError('trabajador')"
+          />
+
+          <app-select
+            formControlName="estacion"
+            label="Estacion"
+            placeholder="Selecciona una estacion"
+            [options]="stationOptions()"
+            [error]="getFieldError('estacion')"
+          />
+
+          <app-select
+            formControlName="actividad"
+            label="Actividad"
+            [placeholder]="selectedStationId() ? 'Selecciona una actividad' : 'Primero selecciona una estacion'"
+            [options]="activityOptions()"
+            [error]="getFieldError('actividad')"
+          />
+
+          <app-select
+            formControlName="estado_tareo"
+            label="Estado del tareo"
+            placeholder="Selecciona un estado"
+            [options]="estadoTareoSelectOptions"
+            [error]="getFieldError('estado_tareo')"
+          />
+
+          <app-input
+            formControlName="numero_operacion"
+            label="Numero de operacion"
+            placeholder="Ej. OP-001"
+            [error]="getFieldError('numero_operacion')"
+          />
+
+          <app-input
+            formControlName="chasis"
+            label="Chasis"
+            placeholder="Ej. ABC123"
+            [error]="getFieldError('chasis')"
+          />
+
+          <app-input
+            formControlName="fecha"
+            type="date"
+            label="Fecha"
+            [error]="getFieldError('fecha')"
+          />
+
+          <div class="space-y-1.5">
+            <label class="block text-sm font-medium text-slate-700">Horas calculadas</label>
+            <input
+              type="text"
+              [value]="calculatedHours()"
+              readonly
+              class="block w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900 outline-none"
+            />
+          </div>
+
+          <app-input
+            formControlName="hora_ini"
+            type="time"
+            label="Hora de inicio"
+            [error]="getFieldError('hora_ini')"
+          />
+
+          <app-input
+            formControlName="hora_fin"
+            type="time"
+            label="Hora de fin"
+            [error]="getHoraFinError()"
+          />
+
+          <div class="md:col-span-2 space-y-1.5">
+            <label for="observacion" class="block text-sm font-medium text-slate-700">
+              Observacion
+            </label>
+            <textarea
+              id="observacion"
+              formControlName="observacion"
+              rows="4"
+              placeholder="Detalles adicionales del tareo..."
+              class="block w-full rounded-xl border bg-white px-4 py-3 text-sm text-slate-900 outline-none transition"
+              [class.border-orange-400]="!!getFieldError('observacion')"
+              [class.border-slate-200]="!getFieldError('observacion')"
+              [class.focus:border-orange-500]="!!getFieldError('observacion')"
+              [class.focus:border-blue-500]="!getFieldError('observacion')"
+              [class.focus:ring-2]="true"
+              [class.focus:ring-orange-100]="!!getFieldError('observacion')"
+              [class.focus:ring-blue-100]="!getFieldError('observacion')"
+            ></textarea>
+
+            @if (getFieldError('observacion')) {
+              <p class="mt-1.5 flex items-center gap-1 text-xs text-orange-500">
+                <i class="icon text-[1.1em]">error</i>
+                {{ getFieldError('observacion') }}
+              </p>
+            }
+          </div>
+        </div>
+
+        <div class="flex items-center justify-end gap-3 border-t border-slate-100 pt-6">
+          <app-button
+            type="button"
+            variant="ghost"
+            routerLink="/dashboard/tareos"
+            [disabled]="saving()"
+          >
+            Cancelar
+          </app-button>
+
+          <app-button
+            type="submit"
+            variant="primary"
+            icon="save"
+            [loading]="saving()"
+          >
+            {{ isEdit() ? 'Guardar cambios' : 'Crear tareo' }}
+          </app-button>
+        </div>
+      </form>
+    </app-card>
+  }
+</div>

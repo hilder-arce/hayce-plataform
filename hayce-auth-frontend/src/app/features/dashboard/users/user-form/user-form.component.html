@@ -1,0 +1,188 @@
+<!-- ================================================ -->
+<!-- [ PAGE HEADER ] - CONTEXTO Y NAVEGACION          -->
+<!-- ================================================ -->
+<div class="mb-6 flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+  <div class="flex items-start gap-3">
+    <a
+      routerLink="/dashboard/users"
+      aria-label="Volver al listado de usuarios"
+      class="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-600 transition-colors hover:bg-slate-50 hover:text-slate-900"
+    >
+      <i class="icon text-xl">arrow_back</i>
+    </a>
+
+    <div class="space-y-2">
+      <h1 class="font-body text-3xl font-semibold tracking-tight text-slate-900 sm:text-[2rem]">
+        {{ isEditMode() ? 'Editar usuario' : 'Nuevo usuario' }}
+      </h1>
+      <p class="max-w-2xl text-sm leading-6 text-slate-500 sm:text-base">
+        {{ isEditMode()
+          ? 'Actualiza el perfil del usuario y mantén su acceso alineado con el rol asignado.'
+          : 'Registra un nuevo miembro del equipo con sus credenciales y rol operativo.' }}
+      </p>
+    </div>
+  </div>
+</div>
+
+<!-- ================================================ -->
+<!-- [ FORM CARD ] - ESTRUCTURA PRINCIPAL             -->
+<!-- ================================================ -->
+<app-card [noPadding]="true">
+  @if (loading()) {
+    <!-- ================================================ -->
+    <!-- [ LOADING STATE ] - CARGA INICIAL                -->
+    <!-- ================================================ -->
+    <div class="flex min-h-80 flex-col items-center justify-center gap-4 px-6 py-16 text-center text-slate-500">
+      <app-spinner size="lg" />
+      <div class="space-y-1">
+        <p class="text-base font-medium text-slate-900">Preparando formulario</p>
+        <p class="text-sm">Cargando la informacion del usuario y los roles disponibles.</p>
+      </div>
+    </div>
+  } @else {
+    <form [formGroup]="userForm" (ngSubmit)="onSubmit()" class="space-y-0">
+      <!-- ================================================ -->
+      <!-- [ FORM BODY ] - DATOS PRINCIPALES                -->
+      <!-- ================================================ -->
+      <div class="border-b border-slate-200 px-5 py-5 sm:px-6 sm:py-6">
+        <div class="mb-6 flex flex-col gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-4 sm:flex-row sm:items-start">
+          <div class="flex h-11 w-11 items-center justify-center rounded-2xl bg-white text-blue-600 shadow-sm">
+            <i class="icon text-xl">person</i>
+          </div>
+
+          <div class="space-y-1">
+            <h2 class="font-body text-lg font-semibold text-slate-900">Datos de acceso</h2>
+            <p class="text-sm leading-6 text-slate-500">
+              Completa la identidad del usuario y el rol que definira sus permisos dentro del sistema.
+            </p>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 gap-5 md:grid-cols-2">
+          <div>
+            <app-input
+              label="Nombre completo"
+              icon="badge"
+              placeholder="Ej. Juan Perez"
+              formControlName="nombre"
+              [error]="getFieldError('nombre')"
+            />
+          </div>
+
+          <div>
+            <app-input
+              label="Correo electronico"
+              icon="alternate_email"
+              placeholder="usuario@empresa.com"
+              type="email"
+              formControlName="email"
+              [error]="getFieldError('email')"
+            />
+          </div>
+
+          <div>
+            <label for="rol" class="mb-1.5 block text-sm font-medium text-slate-700">
+              Rol asignado
+            </label>
+
+            <div class="relative">
+              <select
+                id="rol"
+                formControlName="rol"
+                class="block w-full appearance-none rounded-xl border bg-white px-4 py-2.5 pr-10 text-sm text-slate-900 outline-none transition"
+                [class.border-orange-400]="roleFieldHasError()"
+                [class.border-slate-200]="!roleFieldHasError()"
+                [class.focus:border-orange-500]="roleFieldHasError()"
+                [class.focus:ring-2]="roleFieldHasError()"
+                [class.focus:ring-orange-100]="roleFieldHasError()"
+                [class.focus:border-blue-500]="!roleFieldHasError()"
+                [class.focus:ring-2]="!roleFieldHasError()"
+                [class.focus:ring-blue-100]="!roleFieldHasError()"
+              >
+                <option value="" disabled>Selecciona un rol</option>
+                <option *ngFor="let rol of roles()" [value]="rol._id">{{ rol.nombre }}</option>
+              </select>
+
+              <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400">
+                <i class="icon text-lg">expand_more</i>
+              </div>
+            </div>
+
+            @if (getFieldError('rol')) {
+              <p class="mt-1.5 flex items-center gap-1 text-xs text-orange-500">
+                <i class="icon text-[1.1em]">error</i>
+                {{ getFieldError('rol') }}
+              </p>
+            }
+          </div>
+
+          @if (!isEditMode()) {
+            <div>
+              <label class="mb-1.5 block text-sm font-medium text-slate-700">
+                Contrasena
+              </label>
+
+              <app-input
+                icon="lock"
+                type="password"
+                placeholder="Minimo 6 caracteres"
+                formControlName="password"
+                [error]="getFieldError('password')"
+              />
+            </div>
+          } @else if (canAdminChangePassword()) {
+            <div>
+              <label class="mb-1.5 block text-sm font-medium text-slate-700">
+                Nueva contrasena para el usuario
+              </label>
+
+              <app-input
+                icon="lock_reset"
+                type="password"
+                placeholder="Deja vacio si no deseas cambiarla"
+                formControlName="adminPassword"
+                [error]="getFieldError('adminPassword')"
+              />
+
+              <p class="mt-1.5 text-xs leading-5 text-slate-500">
+                Si escribes una nueva contrasena, el sistema la actualizara directamente al guardar.
+              </p>
+            </div>
+          }
+        </div>
+      </div>
+
+      <!-- ================================================ -->
+      <!-- [ FORM FOOTER ] - ACCIONES DE ENVIO              -->
+      <!-- ================================================ -->
+      <div class="flex flex-col gap-4 px-5 py-5 sm:px-6 sm:py-6 md:flex-row md:items-center md:justify-between">
+        <p class="text-sm leading-6 text-slate-500">
+          {{ isEditMode()
+            ? canAdminChangePassword()
+              ? 'El rol asignado definira los permisos del usuario. Tambien puedes establecer una nueva contrasena desde esta misma vista.'
+              : 'El rol asignado definira los permisos del usuario.'
+            : 'El rol asignado definira automaticamente los permisos disponibles para el usuario.' }}
+        </p>
+
+        <div class="flex w-full flex-col-reverse gap-3 sm:flex-row sm:justify-end md:w-auto">
+          <a
+            routerLink="/dashboard/users"
+            class="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50 hover:text-slate-900"
+          >
+            Cancelar
+          </a>
+
+          <app-button
+            type="submit"
+            variant="primary"
+            [loading]="loading()"
+            [disabled]="loading()"
+            class="w-full sm:w-auto"
+          >
+            {{ isEditMode() ? 'Guardar cambios' : 'Crear usuario' }}
+          </app-button>
+        </div>
+      </div>
+    </form>
+  }
+</app-card>

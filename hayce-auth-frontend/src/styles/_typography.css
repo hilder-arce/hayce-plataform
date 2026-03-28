@@ -1,0 +1,58 @@
+/* [ TYPOGRAPHY ] - JERARQUIA Y UTILIDADES GLOBALES */
+
+@layer base {
+  html {
+    font-family: var(--hayce-font-body);
+    font-size: 16px;
+    line-height: var(--hayce-leading-normal);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    font-size: var(--hayce-text-base);
+    color: var(--hayce-text-primary);
+    font-family: var(--hayce-font-body);
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: var(--hayce-font-body);
+    color: var(--hayce-text-primary);
+    font-weight: 700;
+    line-height: var(--hayce-leading-tight);
+    letter-spacing: -0.02em;
+  }
+
+  h1 { font-size: var(--hayce-text-5xl); }
+  h2 { font-size: var(--hayce-text-4xl); }
+  h3 { font-size: var(--hayce-text-3xl); }
+  h4 { font-size: var(--hayce-text-2xl); }
+  h5 { font-size: var(--hayce-text-xl); }
+  h6 { font-size: var(--hayce-text-lg); }
+
+  p {
+    margin-bottom: var(--hayce-space-4);
+    max-width: 65ch;
+  }
+
+  code,
+  kbd,
+  samp,
+  pre {
+    font-family: var(--hayce-font-mono);
+    font-size: 0.9em;
+  }
+
+  .font-display { font-family: var(--hayce-font-display); }
+  .font-body { font-family: var(--hayce-font-body); }
+  .font-mono { font-family: var(--hayce-font-mono); }
+  .text-muted { color: var(--hayce-text-muted); }
+  .text-accent { color: var(--hayce-accent); }
+  .text-danger { color: var(--hayce-danger); }
+  .text-success { color: var(--hayce-success); }
+}

@@ -1,0 +1,234 @@
+<!-- ================================================ -->
+<!-- [ PAGE HEADER ] - TITULO Y ACCION PRINCIPAL      -->
+<!-- ================================================ -->
+<div class="mb-6 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+  <div class="space-y-2">
+    <h1 class="font-body text-3xl font-semibold tracking-tight text-slate-900 sm:text-[2rem]">
+      Gestión de Usuarios
+    </h1>
+    <p class="max-w-2xl text-sm leading-6 text-slate-500 sm:text-base">
+      Administra el acceso y roles de los miembros del equipo.
+    </p>
+  </div>
+
+  @if (canCreate) {
+    <div class="hidden md:flex md:w-auto md:justify-end">
+      <app-button
+        variant="primary"
+        icon="add"
+        routerLink="/dashboard/users/new"
+      >
+        Nuevo Usuario
+      </app-button>
+    </div>
+  }
+
+</div>
+
+<!-- ================================================ -->
+<!-- [ FILTERS ] - BUSQUEDA Y ESTADO                  -->
+<!-- ================================================ -->
+<div class="mb-6 rounded-3xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
+  <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+    <div class="w-full md:max-w-sm">
+      <app-input
+        placeholder="Buscar por nombre o correo..."
+        icon="search"
+        [ngModel]="searchTerm()"
+        (ngModelChange)="onSearch($event)"
+      />
+    </div>
+
+    <div class="flex w-full flex-col gap-3 md:w-auto md:flex-row md:items-center md:justify-end">
+      <div class="flex w-full items-center justify-between gap-3 md:w-auto md:justify-start">
+        <label class="flex items-center gap-3 text-sm font-medium text-slate-700">
+          <input
+            type="checkbox"
+            class="h-4 w-4 rounded border-slate-300 text-blue-500 focus:ring-2 focus:ring-blue-200"
+            [checked]="showInactive()"
+            (change)="toggleInactive()"
+          />
+          <span>Mostrar inactivos</span>
+        </label>
+
+        @if (canCreate) {
+          <div class="md:hidden">
+            <app-button
+              variant="primary"
+              icon="add"
+              size="sm"
+              routerLink="/dashboard/users/new"
+            >
+              Nuevo Usuario
+            </app-button>
+          </div>
+        }
+      </div>
+
+      <div class="hidden md:inline-flex items-center justify-center rounded-full border border-slate-200 bg-slate-50 px-4 py-2 text-sm text-slate-600">
+        <strong class="mr-1.5 font-semibold text-slate-900">{{ usersResource().total }}</strong>
+        registros
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================================================ -->
+<!-- [ USERS TABLE ] - LISTADO PRINCIPAL              -->
+<!-- ================================================ -->
+<app-card [noPadding]="true">
+  <div class="overflow-x-auto">
+    <table class="min-w-max w-full border-collapse text-left text-sm text-slate-600">
+      <thead class="bg-slate-50 text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
+        <tr>
+          <th class="px-6 py-4">Usuario</th>
+          <th class="px-6 py-4">Rol</th>
+          <th class="px-6 py-4">Estado</th>
+          <th class="px-6 py-4">Fecha alta</th>
+          <th class="px-6 py-4 text-right">Acciones</th>
+        </tr>
+      </thead>
+
+      <tbody class="divide-y divide-slate-200">
+        @if (usersResource().loading) {
+          <tr>
+            <td colspan="5" class="px-6 py-14 text-center">
+              <div class="flex flex-col items-center justify-center gap-3 text-slate-500">
+                <app-spinner size="lg" />
+                <p class="text-sm">Cargando registros...</p>
+              </div>
+            </td>
+          </tr>
+        } @else if (usersResource().items.length === 0) {
+          <tr>
+            <td colspan="5" class="px-6 py-16">
+              <!-- ================================================ -->
+              <!-- [ EMPTY STATE ] - SIN RESULTADOS                 -->
+              <!-- ================================================ -->
+              <div class="flex flex-col items-center justify-center gap-4 text-center">
+                <div class="flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-100 text-slate-500">
+                  <i class="icon text-3xl">person_search</i>
+                </div>
+                <div class="space-y-2">
+                  <h3 class="font-body text-xl font-semibold tracking-tight text-slate-900">
+                    No se encontraron usuarios
+                  </h3>
+                  <p class="max-w-xl text-sm leading-6 text-slate-500">
+                    Prueba ajustando los filtros de búsqueda o crea un nuevo usuario.
+                  </p>
+                </div>
+
+                @if (canCreate) {
+                  <app-button variant="outline" routerLink="/dashboard/users/new">
+                    Crear mi primer usuario
+                  </app-button>
+                }
+              </div>
+            </td>
+          </tr>
+        } @else {
+          @for (user of usersResource().items; track user._id) {
+            <tr class="transition-colors hover:bg-slate-50/80">
+              <td class="px-6 py-4">
+                <div class="flex items-center gap-3">
+                  <app-avatar [initials]="user.nombre" size="md" />
+                  <div class="min-w-0">
+                    <div class="truncate font-medium text-slate-900">{{ user.nombre }}</div>
+                    <div class="truncate text-xs text-slate-500">{{ user.email }}</div>
+                  </div>
+                </div>
+              </td>
+
+              <td class="px-6 py-4">
+                <div class="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-medium text-slate-700">
+                  <i class="icon text-sm text-slate-500">badge</i>
+                  <span>{{ getRoleName(user) }}</span>
+                </div>
+              </td>
+
+              <td class="px-6 py-4">
+                <app-badge [variant]="user.estado ? 'success' : 'destructive'">
+                  {{ user.estado ? 'Activo' : 'Inactivo' }}
+                </app-badge>
+              </td>
+
+              <td class="px-6 py-4 text-xs font-medium text-slate-500">
+                {{ user.createdAt | date:'dd MMM yyyy' }}
+              </td>
+
+              <td class="px-6 py-4">
+                <div class="flex items-center justify-end gap-2">
+                  @if (canUpdate) {
+                    <app-button
+                      variant="ghost"
+                      size="sm"
+                      icon="edit"
+                      [routerLink]="['/dashboard/users/edit', user._id]"
+                    />
+                  }
+
+                  @if (canDelete && user.estado) {
+                    <app-button
+                      variant="ghost"
+                      size="sm"
+                      icon="block"
+                      class="text-red-600 hover:bg-red-50 hover:text-red-700"
+                      (onClick)="deleteUser(user._id)"
+                    />
+                  }
+
+                  @if (canRestore && !user.estado) {
+                    <app-button
+                      variant="ghost"
+                      size="sm"
+                      icon="restore"
+                      class="text-green-600 hover:bg-green-50 hover:text-green-700"
+                      (onClick)="restoreUser(user._id)"
+                    />
+                  }
+                </div>
+              </td>
+            </tr>
+          }
+        }
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ================================================ -->
+  <!-- [ FOOTER ] - RESUMEN Y PAGINACION                -->
+  <!-- ================================================ -->
+  <div footer class="flex w-full flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+    <div class="text-sm text-slate-500">
+      Mostrando
+      <span class="font-semibold text-slate-900">{{ usersResource().items.length }}</span>
+      de
+      <span class="font-semibold text-slate-900">{{ usersResource().total }}</span>
+      registros
+    </div>
+
+    <div class="flex items-center justify-between gap-3 sm:justify-end">
+      <app-button
+        variant="ghost"
+        size="sm"
+        [disabled]="currentPage() === 1"
+        (onClick)="changePage(currentPage() - 1)"
+      >
+        Anterior
+      </app-button>
+
+      <div class="min-w-[4.5rem] text-center text-sm font-medium text-slate-700">
+        {{ currentPage() }} / {{ totalPages() || 1 }}
+      </div>
+
+      <app-button
+        variant="ghost"
+        size="sm"
+        [disabled]="currentPage() >= totalPages()"
+        (onClick)="changePage(currentPage() + 1)"
+      >
+        Siguiente
+      </app-button>
+    </div>
+  </div>
+</app-card>

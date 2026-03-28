@@ -1,0 +1,203 @@
+<!-- ================================================ -->
+<!-- [ PAGE HEADER ] - TITULO Y ACCION PRINCIPAL      -->
+<!-- ================================================ -->
+<div class="mb-6 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+  <div class="space-y-2">
+    <h1 class="font-body text-3xl font-semibold tracking-tight text-slate-900 sm:text-[2rem]">
+      Gestion de Permisos
+    </h1>
+    <p class="max-w-2xl text-sm leading-6 text-slate-500 sm:text-base">
+      Administra los niveles de acceso y capacidades operativas por modulo.
+    </p>
+  </div>
+
+  @if (canCreate) {
+    <div class="hidden md:flex md:w-auto md:justify-end">
+      <app-button
+        variant="primary"
+        icon="add"
+        [routerLink]="['/dashboard/permissions/new']"
+      >
+        Nuevo Permiso
+      </app-button>
+    </div>
+  }
+
+</div>
+
+<!-- ================================================ -->
+<!-- [ FILTERS ] - BUSQUEDA Y ESTADO                  -->
+<!-- ================================================ -->
+<div class="mb-6 rounded-3xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
+  <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+    <div class="w-full md:max-w-sm">
+      <app-input
+        placeholder="Buscar permisos por nombre, modulo o descripcion..."
+        icon="search"
+        [ngModel]="searchTerm()"
+        (ngModelChange)="onSearch($event)"
+      />
+    </div>
+
+    <div class="flex w-full flex-col gap-3 md:w-auto md:flex-row md:items-center md:justify-end">
+      <div class="flex w-full items-center justify-between gap-3 md:w-auto md:justify-start">
+        <label class="flex items-center gap-3 text-sm font-medium text-slate-700">
+          <input
+            type="checkbox"
+            class="h-4 w-4 rounded border-slate-300 text-blue-500 focus:ring-2 focus:ring-blue-200"
+            [checked]="showInactive()"
+            (change)="onToggleInactive()"
+          />
+          <span>Mostrar inactivos</span>
+        </label>
+
+        @if (canCreate) {
+          <div class="md:hidden">
+            <app-button
+              variant="primary"
+              icon="add"
+              size="sm"
+              [routerLink]="['/dashboard/permissions/new']"
+            >
+              Nuevo Permiso
+            </app-button>
+          </div>
+        }
+      </div>
+
+      <div class="hidden md:inline-flex items-center justify-center rounded-full border border-slate-200 bg-slate-50 px-4 py-2 text-sm text-slate-600">
+        <strong class="mr-1.5 font-semibold text-slate-900">{{ filteredPermissions().length }}</strong>
+        permisos
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================================================ -->
+<!-- [ PERMISSIONS TABLE ] - LISTADO PRINCIPAL        -->
+<!-- ================================================ -->
+<app-card [noPadding]="true">
+  <div class="overflow-x-auto">
+    <table class="min-w-max w-full text-left text-sm text-slate-600">
+      <thead class="bg-slate-50 text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
+        <tr>
+          <th class="px-6 py-4">Permiso operativo</th>
+          <th class="px-6 py-4">Modulo asociado</th>
+          <th class="px-6 py-4">Alcance</th>
+          <th class="px-6 py-4">Estado</th>
+          <th class="px-6 py-4 text-right">Acciones</th>
+        </tr>
+      </thead>
+
+      <tbody class="divide-y divide-slate-200">
+        @if (loading()) {
+          <tr>
+            <td colspan="5" class="px-6 py-12 text-center">
+              <div class="flex flex-col items-center justify-center gap-3 text-slate-500">
+                <app-spinner size="lg" />
+                <p>Sincronizando permisos...</p>
+              </div>
+            </td>
+          </tr>
+        } @else if (filteredPermissions().length === 0) {
+          <tr>
+            <td colspan="5" class="px-6 py-16 text-center">
+              <!-- ================================================ -->
+              <!-- [ EMPTY STATE ] - SIN RESULTADOS                 -->
+              <!-- ================================================ -->
+              <div class="flex flex-col items-center justify-center gap-4 text-center">
+                <div class="flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-100 text-slate-500">
+                  <i class="icon text-3xl">vpn_key_off</i>
+                </div>
+                <div class="space-y-2">
+                  <h3 class="font-body text-xl font-semibold tracking-tight text-slate-900">
+                    No se encontraron permisos
+                  </h3>
+                  <p class="max-w-xl text-sm leading-6 text-slate-500">
+                    Prueba ajustando la busqueda o registra un nuevo permiso operativo.
+                  </p>
+                </div>
+
+                @if (canCreate) {
+                  <app-button variant="outline" [routerLink]="['/dashboard/permissions/new']">
+                    Crear mi primer permiso
+                  </app-button>
+                }
+              </div>
+            </td>
+          </tr>
+        } @else {
+          @for (permission of filteredPermissions(); track permission._id) {
+            <tr class="transition-colors hover:bg-slate-50/80" [class.opacity-60]="!permission.estado">
+              <td class="px-6 py-4">
+                <div class="flex items-center gap-3">
+                  <div class="flex h-10 w-10 items-center justify-center rounded-2xl bg-blue-50 text-blue-600">
+                    <i class="icon">key</i>
+                  </div>
+
+                  <div class="min-w-0">
+                    <div class="truncate font-medium text-slate-900">{{ permission.nombre }}</div>
+                  </div>
+                </div>
+              </td>
+
+              <td class="px-6 py-4">
+                <div class="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-medium text-slate-700">
+                  <i class="icon text-sm text-slate-500">extension</i>
+                  <span>{{ getModuleName(permission) }}</span>
+                </div>
+              </td>
+
+              <td class="px-6 py-4">
+                <p class="max-w-xs leading-6 text-slate-500">
+                  {{ permission.descripcion }}
+                </p>
+              </td>
+
+              <td class="px-6 py-4">
+                <app-badge [variant]="permission.estado ? 'success' : 'destructive'">
+                  {{ permission.estado ? 'Activo' : 'Inactivo' }}
+                </app-badge>
+              </td>
+
+              <td class="px-6 py-4 text-right">
+                <div class="flex items-center justify-end gap-2">
+                  @if (canUpdate && permission.estado) {
+                    <app-button
+                      variant="ghost"
+                      size="sm"
+                      icon="edit"
+                      [routerLink]="['/dashboard/permissions/edit', permission._id]"
+                    />
+                  }
+
+                  @if (canDelete && permission.estado) {
+                    <app-button
+                      variant="ghost"
+                      size="sm"
+                      icon="block"
+                      [disabled]="pendingId() === permission._id"
+                      class="text-red-600 hover:bg-red-50 hover:text-red-700"
+                      (onClick)="confirmDelete(permission)"
+                    />
+                  }
+
+                  @if (canRestore && !permission.estado) {
+                    <app-button
+                      variant="ghost"
+                      size="sm"
+                      icon="restore"
+                      [disabled]="pendingId() === permission._id"
+                      class="text-green-600 hover:bg-green-50 hover:text-green-700"
+                      (onClick)="confirmRestore(permission)"
+                    />
+                  }
+                </div>
+              </td>
+            </tr>
+          }
+        }
+      </tbody>
+    </table>
+  </div>
+</app-card>

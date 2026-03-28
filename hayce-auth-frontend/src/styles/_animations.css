@@ -1,0 +1,56 @@
+/* [HAYCE] Reusable animations and transitions */
+
+@layer utilities {
+  /* ANIMATION CLASSES */
+  .animate-fade-in {
+    animation: fadeIn var(--hayce-duration-base) var(--hayce-ease-out) forwards;
+  }
+
+  .animate-slide-up {
+    animation: slideUp var(--hayce-duration-base) var(--hayce-ease-out) forwards;
+  }
+  
+  .animate-slide-in-right {
+    animation: slideInRight var(--hayce-duration-base) var(--hayce-ease-out) forwards;
+  }
+
+  .animate-pulse-slow {
+    animation: pulse 3s infinite cubic-bezier(0.4, 0, 0.6, 1);
+  }
+
+  /* TRANSITIONS */
+  .transition-all-fast {
+    transition: all var(--hayce-duration-fast) var(--hayce-ease-out);
+  }
+  
+  .transition-colors-fast {
+    transition: color var(--hayce-duration-fast) var(--hayce-ease-out), 
+                background-color var(--hayce-duration-fast) var(--hayce-ease-out),
+                border-color var(--hayce-duration-fast) var(--hayce-ease-out);
+  }
+}
+
+/* KEYFRAMES */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(1rem); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideInRight {
+  from { opacity: 0; transform: translateX(1rem); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}

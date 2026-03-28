@@ -1,0 +1,15 @@
+import { Field, InputType } from '@nestjs/graphql';
+import { IsNotEmpty, IsString } from 'class-validator';
+
+@InputType()
+export class CreateModuleDto {
+  @IsString()
+  @IsNotEmpty()
+  @Field()
+  nombre: string;
+
+  @IsString()
+  @IsNotEmpty()
+  @Field()
+  descripcion: string;
+}

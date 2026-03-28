@@ -1,0 +1,119 @@
+/* [ TOKENS ] - PALETA Y VARIABLES GLOBALES DEL SISTEMA */
+:root {
+  color-scheme: light;
+
+  /* ========================================== */
+  /* [ PALETA BASE ] - VARIABLES GENERICAS      */
+  /* ========================================== */
+  --color-surface: #ffffff;
+  --color-surface-muted: #f8fafc;
+  --color-surface-soft: #f1f5f9;
+  --color-border: #e2e8f0;
+  --color-border-strong: #cbd5e1;
+  --color-text-primary: #0f172a;
+  --color-text-secondary: #64748b;
+  --color-text-soft: #94a3b8;
+  --color-accent: #3b82f6;
+  --color-accent-strong: #2563eb;
+  --color-accent-soft: #eff6ff;
+  --color-success: #16a34a;
+  --color-success-soft: #f0fdf4;
+  --color-warning: #d97706;
+  --color-warning-soft: #fffbeb;
+  --color-danger: #dc2626;
+  --color-danger-soft: #fef2f2;
+  --color-info: #3b82f6;
+  --color-info-soft: #eff6ff;
+  --color-overlay: rgb(15 23 42 / 0.16);
+
+  /* ========================================== */
+  /* [ HAYCE ] - MAPEO DE COMPATIBILIDAD       */
+  /* ========================================== */
+  --hayce-bg-canvas: var(--color-surface-muted);
+  --hayce-bg-elevated: var(--color-surface);
+  --hayce-bg-overlay: var(--color-overlay);
+
+  --hayce-surface: var(--color-surface);
+  --hayce-surface-muted: var(--color-surface-muted);
+  --hayce-surface-strong: var(--color-surface-soft);
+
+  --hayce-border-subtle: var(--color-border);
+  --hayce-border-strong: var(--color-border-strong);
+  --hayce-border-accent: rgb(59 130 246 / 0.22);
+
+  --hayce-accent: var(--color-accent);
+  --hayce-accent-strong: var(--color-accent-strong);
+  --hayce-accent-soft: rgb(59 130 246 / 0.12);
+  --hayce-accent-ring: rgb(59 130 246 / 0.18);
+
+  --hayce-success: var(--color-success);
+  --hayce-success-soft: rgb(22 163 74 / 0.12);
+  --hayce-warning: var(--color-warning);
+  --hayce-warning-soft: rgb(217 119 6 / 0.12);
+  --hayce-danger: var(--color-danger);
+  --hayce-danger-soft: rgb(220 38 38 / 0.12);
+  --hayce-info: var(--color-info);
+  --hayce-info-soft: rgb(59 130 246 / 0.12);
+
+  --hayce-text-primary: var(--color-text-primary);
+  --hayce-text-secondary: var(--color-text-secondary);
+  --hayce-text-muted: var(--color-text-secondary);
+  --hayce-text-disabled: var(--color-text-soft);
+  --hayce-text-inverse: #ffffff;
+
+  /* ========================================== */
+  /* [ ESCALA ] - TIPOGRAFIA, ESPACIADO, SOMBRA */
+  /* ========================================== */
+  --hayce-shadow-sm: 0 1px 2px 0 rgb(15 23 42 / 0.04);
+  --hayce-shadow-md: 0 8px 20px rgb(15 23 42 / 0.06);
+  --hayce-shadow-lg: 0 14px 32px rgb(15 23 42 / 0.08);
+  --hayce-shadow-card: 0 18px 40px rgb(15 23 42 / 0.08);
+  --hayce-shadow-glow: 0 0 0 1px rgb(59 130 246 / 0.08), 0 10px 24px rgb(59 130 246 / 0.08);
+
+  --hayce-radius-sm: 0.375rem;
+  --hayce-radius-md: 0.75rem;
+  --hayce-radius-lg: 1rem;
+  --hayce-radius-card: 1.5rem;
+  --hayce-radius-pill: 9999px;
+
+  --hayce-space-1: 0.25rem;
+  --hayce-space-2: 0.5rem;
+  --hayce-space-3: 0.75rem;
+  --hayce-space-4: 1rem;
+  --hayce-space-5: 1.25rem;
+  --hayce-space-6: 1.5rem;
+  --hayce-space-8: 2rem;
+  --hayce-space-10: 2.5rem;
+  --hayce-space-12: 3rem;
+  --hayce-space-16: 4rem;
+
+  --hayce-font-display: 'IBM Plex Sans', sans-serif;
+  --hayce-font-body: 'IBM Plex Sans', sans-serif;
+  --hayce-font-mono: 'JetBrains Mono', monospace;
+
+  --hayce-text-xs: 0.75rem;
+  --hayce-text-sm: 0.875rem;
+  --hayce-text-base: 1rem;
+  --hayce-text-lg: 1.125rem;
+  --hayce-text-xl: 1.25rem;
+  --hayce-text-2xl: 1.5rem;
+  --hayce-text-3xl: 1.875rem;
+  --hayce-text-4xl: 2.25rem;
+  --hayce-text-5xl: 3rem;
+
+  --hayce-leading-tight: 1.1;
+  --hayce-leading-snug: 1.25;
+  --hayce-leading-normal: 1.5;
+  --hayce-leading-relaxed: 1.625;
+
+  --hayce-container-auth: 28rem;
+  --hayce-container-dashboard: 80rem;
+  --hayce-sidebar-width: 17rem;
+  --hayce-sidebar-collapsed: 5rem;
+  --hayce-topbar-height: 4.5rem;
+
+  --hayce-duration-fast: 200ms;
+  --hayce-duration-base: 300ms;
+  --hayce-ease-out: cubic-bezier(0, 0, 0.2, 1);
+  --hayce-ease-standard: cubic-bezier(0.2, 0, 0, 1);
+}

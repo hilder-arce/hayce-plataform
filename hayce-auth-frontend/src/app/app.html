@@ -1,0 +1,42 @@
+<div class="min-h-screen">
+  <!-- ================================================ -->
+  <!-- [ ALERTAS ] - TOASTS GLOBALES                    -->
+  <!-- ================================================ -->
+  <div class="pointer-events-none fixed inset-x-0 top-0 z-[1200] flex flex-col items-end gap-3 p-4 sm:p-6">
+    @for (alert of alerts(); track alert.id) {
+      <div class="pointer-events-auto w-full max-w-sm">
+        <app-alert
+          [variant]="alert.type"
+          [title]="alert.title"
+          [message]="alert.message"
+          [icon]="alert.icon"
+          [dismissible]="true"
+          (onDismiss)="dismissAlert(alert.id)"
+        />
+      </div>
+    }
+  </div>
+
+  <!-- ================================================ -->
+  <!-- [ CONFIRMACION ] - DIALOGO GLOBAL                -->
+  <!-- ================================================ -->
+  @if (confirmDialog(); as dialog) {
+    <div class="fixed inset-0 z-[1250] flex items-center justify-center bg-slate-950/35 px-4 backdrop-blur-[2px]">
+      <div class="w-full max-w-md rounded-3xl border border-slate-200 bg-white p-6 shadow-xl">
+        <h2 class="mb-2 text-xl font-semibold text-slate-900">{{ dialog.title }}</h2>
+        <p class="mb-6 text-sm leading-6 text-slate-600">{{ dialog.message }}</p>
+
+        <div class="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+          <app-button variant="secondary" [fullWidth]="true" (onClick)="resolveConfirm(false)">
+            {{ dialog.cancelLabel }}
+          </app-button>
+          <app-button variant="destructive" [fullWidth]="true" (onClick)="resolveConfirm(true)">
+            {{ dialog.confirmLabel }}
+          </app-button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <router-outlet></router-outlet>
+</div>

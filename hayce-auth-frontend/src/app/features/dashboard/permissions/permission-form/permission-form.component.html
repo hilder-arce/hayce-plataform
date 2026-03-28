@@ -1,0 +1,171 @@
+<!-- ================================================ -->
+<!-- [ PAGE HEADER ] - CONTEXTO Y NAVEGACION          -->
+<!-- ================================================ -->
+<div class="mb-6 flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+  <div class="flex items-start gap-3">
+    <a
+      routerLink="/dashboard/permissions"
+      aria-label="Volver al listado de permisos"
+      class="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-600 transition-colors hover:bg-slate-50 hover:text-slate-900"
+    >
+      <i class="icon text-xl">arrow_back</i>
+    </a>
+
+    <div class="space-y-2">
+      <h1 class="font-body text-3xl font-semibold tracking-tight text-slate-900 sm:text-[2rem]">
+        {{ isEditMode() ? 'Editar permiso' : 'Nuevo permiso' }}
+      </h1>
+      <p class="max-w-2xl text-sm leading-6 text-slate-500 sm:text-base">
+        {{ isEditMode()
+          ? 'Ajusta el alcance del permiso manteniendo clara su relacion con el modulo.'
+          : 'Registra una nueva capacidad operativa y asignala al modulo correcto desde el inicio.' }}
+      </p>
+    </div>
+  </div>
+</div>
+
+<!-- ================================================ -->
+<!-- [ FORM CARD ] - ESTRUCTURA PRINCIPAL             -->
+<!-- ================================================ -->
+<app-card [noPadding]="true">
+  @if (loading()) {
+    <!-- ================================================ -->
+    <!-- [ LOADING STATE ] - CARGA INICIAL                -->
+    <!-- ================================================ -->
+    <div class="flex min-h-80 flex-col items-center justify-center gap-4 px-6 py-16 text-center text-slate-500">
+      <app-spinner size="lg" />
+      <div class="space-y-1">
+        <p class="text-base font-medium text-slate-900">Preparando formulario</p>
+        <p class="text-sm">Preparando la configuracion del permiso.</p>
+      </div>
+    </div>
+  } @else {
+    <form [formGroup]="permissionForm" (ngSubmit)="onSubmit()" class="space-y-0">
+      <!-- ================================================ -->
+      <!-- [ FORM BODY ] - DEFINICION DEL PERMISO           -->
+      <!-- ================================================ -->
+      <div class="border-b border-slate-200 px-5 py-5 sm:px-6 sm:py-6">
+        <div class="mb-6 flex flex-col gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-4 sm:flex-row sm:items-start">
+          <div class="flex h-11 w-11 items-center justify-center rounded-2xl bg-white text-blue-600 shadow-sm">
+            <i class="icon text-xl">key</i>
+          </div>
+
+          <div class="space-y-1">
+            <h2 class="font-body text-lg font-semibold text-slate-900">Definicion del permiso</h2>
+            <p class="text-sm leading-6 text-slate-500">
+              Documenta el nombre tecnico, el modulo asociado y la accion que quedara habilitada.
+            </p>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 gap-5 md:grid-cols-2">
+          <div>
+            <app-input
+              label="Nombre tecnico"
+              icon="code"
+              placeholder="Ej. listar_reportes"
+              formControlName="nombre"
+              [error]="getFieldError('nombre')"
+            />
+          </div>
+
+          <div>
+            <label for="modulo" class="mb-1.5 block text-sm font-medium text-slate-700">
+              Modulo asociado
+            </label>
+
+            <select
+              id="modulo"
+              formControlName="modulo"
+              class="block w-full rounded-xl border bg-white px-4 py-3 text-sm text-slate-900 outline-none transition"
+              [class.border-orange-400]="getFieldError('modulo')"
+              [class.border-slate-200]="!getFieldError('modulo')"
+              [class.focus:border-orange-500]="getFieldError('modulo')"
+              [class.focus:ring-2]="true"
+              [class.focus:ring-orange-100]="getFieldError('modulo')"
+              [class.focus:ring-blue-100]="!getFieldError('modulo')"
+              [class.focus:border-blue-500]="!getFieldError('modulo')"
+            >
+              <option value="" disabled>
+                {{ modulesLoading() ? 'Cargando modulos...' : 'Selecciona un modulo' }}
+              </option>
+              @for (module of modules(); track module._id) {
+                <option [value]="module._id">{{ module.nombre }}</option>
+              }
+            </select>
+
+            @if (getFieldError('modulo')) {
+              <p class="mt-1.5 flex items-center gap-1 text-xs text-orange-500">
+                <i class="icon text-[1.1em]">error</i>
+                {{ getFieldError('modulo') }}
+              </p>
+            }
+
+            @if (isEditMode()) {
+              <p class="mt-1.5 flex items-center gap-1 text-xs text-slate-500">
+                <i class="icon text-[1.1em]">info</i>
+                El modulo queda bloqueado en edicion para mantener la trazabilidad del permiso.
+              </p>
+            }
+          </div>
+
+          <div class="md:col-span-2">
+            <label for="descripcion" class="mb-1.5 block text-sm font-medium text-slate-700">
+              Alcance operativo
+            </label>
+
+            <textarea
+              id="descripcion"
+              rows="4"
+              formControlName="descripcion"
+              placeholder="Explica con precision que permite hacer este permiso dentro del sistema."
+              class="block w-full rounded-xl border bg-white px-4 py-3 text-sm text-slate-900 outline-none transition"
+              [class.border-orange-400]="getFieldError('descripcion')"
+              [class.border-slate-200]="!getFieldError('descripcion')"
+              [class.focus:border-orange-500]="getFieldError('descripcion')"
+              [class.focus:ring-2]="true"
+              [class.focus:ring-orange-100]="getFieldError('descripcion')"
+              [class.focus:ring-blue-100]="!getFieldError('descripcion')"
+              [class.focus:border-blue-500]="!getFieldError('descripcion')"
+            ></textarea>
+
+            @if (getFieldError('descripcion')) {
+              <p class="mt-1.5 flex items-center gap-1 text-xs text-orange-500">
+                <i class="icon text-[1.1em]">error</i>
+                {{ getFieldError('descripcion') }}
+              </p>
+            }
+          </div>
+        </div>
+      </div>
+
+      <!-- ================================================ -->
+      <!-- [ FORM FOOTER ] - ACCIONES DE ENVIO              -->
+      <!-- ================================================ -->
+      <div class="flex flex-col gap-4 px-5 py-5 sm:px-6 sm:py-6 md:flex-row md:items-center md:justify-between">
+        <p class="text-sm leading-6 text-slate-500">
+          Define permisos con nombres consistentes para facilitar auditoria y soporte.
+        </p>
+
+        <div class="flex w-full flex-col-reverse gap-3 sm:flex-row sm:justify-end md:w-auto">
+          <a
+            routerLink="/dashboard/permissions"
+            class="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50 hover:text-slate-900"
+          >
+            Cancelar
+          </a>
+
+          <app-button
+            type="submit"
+            variant="primary"
+            [loading]="loading()"
+            [disabled]="loading() || modulesLoading()"
+            class="w-full sm:w-auto"
+          >
+            {{ isEditMode() ? 'Guardar cambios' : 'Crear permiso' }}
+          </app-button>
+        </div>
+      </div>
+    </form>
+  }
+</app-card>

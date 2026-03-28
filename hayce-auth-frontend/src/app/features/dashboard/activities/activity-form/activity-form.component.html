@@ -1,0 +1,97 @@
+<div class="max-w-4xl mx-auto space-y-6">
+  <!-- ================================================ -->
+  <!-- [ CABECERA ] - NAVEGACION Y TITULO               -->
+  <!-- ================================================ -->
+  <div class="flex items-center gap-4">
+    <app-button
+      variant="ghost"
+      routerLink="/dashboard/activities"
+      icon="arrow_back"
+      size="sm"
+    />
+    <div>
+      <h1 class="text-2xl font-bold tracking-tight text-slate-900">
+        {{ isEdit() ? 'Editar Actividad' : 'Nueva Actividad' }}
+      </h1>
+      <p class="text-sm text-slate-500">
+        {{ isEdit() ? 'Modifica los datos de la actividad seleccionada.' : 'Completa el formulario para registrar una nueva actividad.' }}
+      </p>
+    </div>
+  </div>
+
+  @if (loading()) {
+    <div class="flex min-h-[400px] items-center justify-center">
+      <app-spinner size="lg" label="Cargando información..." />
+    </div>
+  } @else {
+    <app-card>
+      <form [formGroup]="form" (ngSubmit)="onSubmit()" class="p-6 space-y-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <!-- Campo: Nombre -->
+          <div class="space-y-1.5">
+            <label class="text-sm font-semibold text-slate-700">Nombre de la Actividad</label>
+            <app-input
+              formControlName="nombre"
+              placeholder="Ej. Control de Acceso"
+            />
+            @if (form.get('nombre')?.touched && form.get('nombre')?.errors?.['required']) {
+              <p class="text-xs text-red-500 font-medium">El nombre es obligatorio.</p>
+            }
+          </div>
+
+          <!-- Campo: Estación -->
+          <div class="space-y-1.5">
+            <label class="text-sm font-semibold text-slate-700">Estación Asignada</label>
+            <select
+              formControlName="estacion"
+              class="w-full h-11 px-3.5 rounded-xl border border-slate-200 bg-white text-slate-900 text-sm focus:border-blue-600 focus:ring-4 focus:ring-blue-100 transition-all outline-none"
+              [class.border-red-500]="form.get('estacion')?.touched && form.get('estacion')?.invalid"
+            >
+              <option value="" disabled>Seleccionar estación...</option>
+              @for (station of stations(); track station._id) {
+                <option [value]="station._id">{{ station.nombre }}</option>
+              }
+            </select>
+            @if (form.get('estacion')?.touched && form.get('estacion')?.errors?.['required']) {
+              <p class="text-xs text-red-500 font-medium">Debes seleccionar una estación.</p>
+            }
+          </div>
+
+          <!-- Campo: Descripción -->
+          <div class="md:col-span-2 space-y-1.5">
+            <label class="text-sm font-semibold text-slate-700">Descripción</label>
+            <textarea
+              formControlName="descripcion"
+              rows="4"
+              placeholder="Describe detalladamente de qué trata esta actividad..."
+              class="w-full px-3.5 py-3 rounded-xl border border-slate-200 bg-white text-slate-900 text-sm focus:border-blue-600 focus:ring-4 focus:ring-blue-100 transition-all outline-none resize-none"
+              [class.border-red-500]="form.get('descripcion')?.touched && form.get('descripcion')?.invalid"
+            ></textarea>
+            @if (form.get('descripcion')?.touched && form.get('descripcion')?.errors?.['required']) {
+              <p class="text-xs text-red-500 font-medium">La descripción es obligatoria.</p>
+            }
+          </div>
+        </div>
+
+        <div class="flex items-center justify-end gap-3 pt-6 border-t border-slate-100">
+          <app-button
+            type="button"
+            variant="ghost"
+            routerLink="/dashboard/activities"
+            [disabled]="saving()"
+          >
+            Cancelar
+          </app-button>
+          <app-button
+            type="submit"
+            variant="primary"
+            [loading]="saving()"
+            icon="save"
+          >
+            {{ isEdit() ? 'Guardar Cambios' : 'Crear Actividad' }}
+          </app-button>
+        </div>
+      </form>
+    </app-card>
+  }
+</div>

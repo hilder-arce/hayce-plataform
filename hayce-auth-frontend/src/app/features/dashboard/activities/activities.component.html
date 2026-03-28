@@ -1,0 +1,162 @@
+<div class="space-y-6">
+  <!-- ================================================ -->
+  <!-- [ CABECERA ] - TITULO Y ACCIONES PRINCIPALES     -->
+  <!-- ================================================ -->
+  <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+    <div>
+      <h1 class="text-2xl font-bold tracking-tight text-slate-900">Actividades del Sistema</h1>
+      <p class="text-sm text-slate-500">Gestiona las actividades vinculadas a cada estación.</p>
+    </div>
+
+    @if (canCreate) {
+      <div class="flex items-center gap-3">
+        <app-button
+          variant="primary"
+          routerLink="new"
+          icon="add"
+        >
+          Nueva Actividad
+        </app-button>
+      </div>
+    }
+  </div>
+
+  <!-- ================================================ -->
+  <!-- [ FILTROS ] - BUSQUEDA Y ESTADO                  -->
+  <!-- ================================================ -->
+  <app-card class="p-4">
+    <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <div class="w-full sm:max-w-md">
+        <app-input
+          [ngModel]="searchTerm()"
+          (ngModelChange)="onSearch($event)"
+          placeholder="Buscar actividad por nombre, descripción o estación..."
+          icon="search"
+        />
+      </div>
+
+      <div class="flex items-center gap-2">
+        <span class="text-sm font-medium text-slate-600">Ver inactivas</span>
+        <button
+          type="button"
+          (click)="onToggleInactive()"
+          class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-offset-2"
+          [class.bg-blue-600]="showInactive()"
+          [class.bg-slate-200]="!showInactive()"
+          role="switch"
+          [attr.aria-checked]="showInactive()"
+        >
+          <span
+            aria-hidden="true"
+            class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"
+            [class.translate-x-5]="showInactive()"
+            [class.translate-x-0]="!showInactive()"
+          ></span>
+        </button>
+      </div>
+    </div>
+  </app-card>
+
+  <!-- ================================================ -->
+  <!-- [ TABLA ] - LISTADO DE RESULTADOS                -->
+  <!-- ================================================ -->
+  <app-card class="overflow-hidden">
+    @if (loading()) {
+      <div class="flex min-h-[400px] items-center justify-center">
+        <app-spinner size="lg" label="Cargando actividades..." />
+      </div>
+    } @else {
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-sm">
+          <thead class="bg-slate-50 border-b border-slate-200 text-xs font-semibold uppercase tracking-wider text-slate-500">
+            <tr>
+              <th class="px-6 py-4">Nombre</th>
+              <th class="px-6 py-4">Estación</th>
+              <th class="px-6 py-4">Descripción</th>
+              <th class="px-6 py-4">Estado</th>
+              <th class="px-6 py-4 text-right">Acciones</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-200 bg-white">
+            @for (item of filteredActivities(); track item._id) {
+              <tr class="hover:bg-slate-50/50 transition-colors">
+                <td class="whitespace-nowrap px-6 py-4">
+                  <div class="flex items-center gap-3">
+                    <div class="h-9 w-9 flex items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+                      <i class="icon">assignment</i>
+                    </div>
+                    <span class="font-medium text-slate-900">{{ item.nombre }}</span>
+                  </div>
+                </td>
+                <td class="px-6 py-4">
+                  <div class="flex items-center gap-2">
+                    <i class="icon text-slate-400 text-sm">location_on</i>
+                    <span class="text-slate-600">{{ item.estacion.nombre || 'N/A' }}</span>
+                  </div>
+                </td>
+                <td class="px-6 py-4">
+                  <p class="max-w-xs truncate text-slate-500" [title]="item.descripcion">
+                    {{ item.descripcion }}
+                  </p>
+                </td>
+                <td class="whitespace-nowrap px-6 py-4">
+                  <app-badge [variant]="item.estado ? 'success' : 'destructive'">
+                    {{ item.estado ? 'Activa' : 'Inactiva' }}
+                  </app-badge>
+                </td>
+                <td class="whitespace-nowrap px-6 py-4 text-right">
+                  <div class="flex items-center justify-end gap-2">
+                    @if (item.estado) {
+                      @if (canUpdate) {
+                        <app-button
+                          variant="ghost"
+                          size="sm"
+                          [routerLink]="['edit', item._id]"
+                          icon="edit"
+                          title="Editar"
+                        />
+                      }
+                      @if (canDelete) {
+                        <app-button
+                          variant="ghost"
+                          size="sm"
+                          (click)="confirmDelete(item)"
+                          icon="delete"
+                          [loading]="activityPendingId() === item._id"
+                          title="Desactivar"
+                          class="hover:text-red-600"
+                        />
+                      }
+                    } @else if (canRestore) {
+                      <app-button
+                        variant="ghost"
+                        size="sm"
+                        (click)="confirmRestore(item)"
+                        icon="restore"
+                        [loading]="activityPendingId() === item._id"
+                        title="Restaurar"
+                        class="hover:text-blue-600"
+                      />
+                    }
+                  </div>
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="5" class="px-6 py-20 text-center">
+                  <div class="flex flex-col items-center gap-3">
+                    <div class="h-12 w-12 rounded-full bg-slate-100 flex items-center justify-center text-slate-400">
+                      <i class="icon text-2xl">search_off</i>
+                    </div>
+                    <p class="text-lg font-medium text-slate-900">No se encontraron actividades</p>
+                    <p class="text-sm text-slate-500">Intenta con otros términos de búsqueda.</p>
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </app-card>
+</div>
