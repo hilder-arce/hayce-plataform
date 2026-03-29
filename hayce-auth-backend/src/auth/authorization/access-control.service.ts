@@ -81,8 +81,12 @@ export class AccessControlService {
       'organizationId' in actor
         ? actor.organizationId
         : (actor as User).organization?.toString?.();
-    const targetOrganizationId = targetOrganization?.toString?.() ?? null;
-
+    const targetOrganizationId = 
+      targetOrganization instanceof Types.ObjectId
+        ? targetOrganization.toString()
+        : (targetOrganization as any)?._id?.toString() || 
+        targetOrganization?.toString() || null;
+        
     if (!actorOrganizationId || actorOrganizationId !== targetOrganizationId) {
       throw new ForbiddenException(
         'No puedes operar fuera de tu organización',
