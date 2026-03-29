@@ -1,4 +1,6 @@
+import { OrganizationItem } from './organization.models';
 import { AppStationItem } from './station.models';
+import { AppUserSummary } from './user.models';
 
 // ==========================================
 // [ ENTIDAD PRINCIPAL ] - ACTIVIDAD DEL SISTEMA
@@ -11,6 +13,8 @@ export interface AppActivityItem {
   estado: boolean;
   createdAt?: string;
   updatedAt?: string;
+  organization?: OrganizationItem | null;
+  createdBy?: AppUserSummary | null;
 }
 
 // ==========================================

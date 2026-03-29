@@ -10,6 +10,7 @@ import {
   MessageResponse,
   UserSession,
 } from '../models/auth.models';
+import { OrganizationItem } from '../models/organization.models';
 import { GraphqlApiService } from './graphql-api.service';
 
 const USER_CACHE_KEY = 'hayce_auth_user';
@@ -23,9 +24,6 @@ export class AuthService {
 
   readonly currentUser = this.userState.asReadonly();
 
-  // ==========================================
-  // [ POST ] - INICIO DE SESION
-  // ==========================================
   login(payload: LoginRequest): Observable<AuthUser> {
     return this.graphql
       .mutate<{ login: { status: string } }>(
@@ -38,29 +36,16 @@ export class AuthService {
         `,
         { input: payload },
       )
-      .pipe(
-        switchMap(() => this.me()),
-      );
+      .pipe(switchMap(() => this.me()));
   }
 
-  // ==========================================
-  // [ GET ] - OBTENER USUARIO AUTENTICADO
-  // ==========================================
   me(): Observable<AuthUser> {
     return this.fetchMe();
   }
 
   private fetchMe(skipAuthRedirect = false): Observable<AuthUser> {
     return this.graphql
-      .query<{ me: {
-        id: string;
-        nombre: string;
-        email: string;
-        rol: string;
-        estado: boolean;
-        createdAt: string;
-        permisos: Array<{ modulo: string; permisos: string[] }>;
-      } }>(
+      .query<{ me: MeGraphql }>(
         `
           query Me {
             me {
@@ -68,8 +53,20 @@ export class AuthService {
               nombre
               email
               rol
+              esSuperAdmin
               estado
               createdAt
+              organization {
+                id
+                nombre
+                slug
+                estado
+              }
+              ownerAdmin {
+                id
+                nombre
+                email
+              }
               permisos {
                 modulo
                 permisos
@@ -89,9 +86,6 @@ export class AuthService {
       );
   }
 
-  // ==========================================
-  // [ POST ] - SOLICITAR RECUPERACION DE PASSWORD
-  // ==========================================
   forgotPassword(email: string): Observable<MessageResponse> {
     return this.graphql
       .mutate<{ forgotPassword: MessageResponse }>(
@@ -108,9 +102,6 @@ export class AuthService {
       .pipe(map((response) => response.forgotPassword));
   }
 
-  // ==========================================
-  // [ POST ] - VALIDAR CODIGO DE RECUPERACION
-  // ==========================================
   verifyCode(email: string, codigo: string): Observable<MessageResponse> {
     return this.graphql
       .mutate<{ verifyCode: MessageResponse }>(
@@ -127,9 +118,6 @@ export class AuthService {
       .pipe(map((response) => response.verifyCode));
   }
 
-  // ==========================================
-  // [ POST ] - RESTABLECER CONTRASENA
-  // ==========================================
   resetPassword(email: string, codigo: string, password: string): Observable<MessageResponse> {
     return this.graphql
       .mutate<{ resetPassword: MessageResponse }>(
@@ -146,9 +134,6 @@ export class AuthService {
       .pipe(map((response) => response.resetPassword));
   }
 
-  // ==========================================
-  // [ GET ] - OBTENER SESIONES DEL USUARIO
-  // ==========================================
   mySessions(): Observable<UserSession[]> {
     return this.graphql
       .query<{ mySessions: Array<{
@@ -181,9 +166,6 @@ export class AuthService {
       .pipe(map((response) => response.mySessions.map((session) => ({ ...session, _id: session.id }))));
   }
 
-  // ==========================================
-  // [ DELETE ] - REVOCAR UNA SESION ESPECIFICA
-  // ==========================================
   revokeSession(sessionId: string): Observable<MessageResponse> {
     return this.graphql
       .mutate<{ revokeSession: MessageResponse }>(
@@ -200,9 +182,6 @@ export class AuthService {
       .pipe(map((response) => response.revokeSession));
   }
 
-  // ==========================================
-  // [ POST ] - CERRAR TODAS LAS SESIONES
-  // ==========================================
   logoutAll(): Observable<MessageResponse> {
     return this.graphql
       .mutate<{ logoutAll: MessageResponse }>(
@@ -218,9 +197,6 @@ export class AuthService {
       .pipe(map((response) => response.logoutAll));
   }
 
-  // ==========================================
-  // [ POST ] - CERRAR SESION ACTUAL
-  // ==========================================
   logout(): Observable<void> {
     return this.graphql
       .mutate<{ logout: MessageResponse }>(
@@ -243,9 +219,6 @@ export class AuthService {
       );
   }
 
-  // ==========================================
-  // [ GET ] - VALIDAR SESION EXISTENTE
-  // ==========================================
   ensureSession(): Observable<boolean> {
     if (this.sessionValidated && this.userState()) {
       return of(true);
@@ -270,9 +243,6 @@ export class AuthService {
     return this.sessionCheck$;
   }
 
-  // ==========================================
-  // [ ACCIONES ] - ESTADO LOCAL DE SESION
-  // ==========================================
   clearSession(): void {
     this.sessionValidated = false;
     this.sessionCheck$ = null;
@@ -283,6 +253,7 @@ export class AuthService {
   hasPermission(permission: string): boolean {
     const user = this.userState();
     if (!user) return false;
+    if (user.esSuperAdmin) return true;
 
     return this.getPermissionSet(user).has(permission);
   }
@@ -290,14 +261,12 @@ export class AuthService {
   hasAllPermissions(permissions: string[]): boolean {
     const user = this.userState();
     if (!user) return false;
+    if (user.esSuperAdmin) return true;
 
     const grantedPermissions = this.getPermissionSet(user);
     return permissions.every((permission) => grantedPermissions.has(permission));
   }
 
-  // ==========================================
-  // [ PRIVADO ] - HELPERS INTERNOS
-  // ==========================================
   private setSession(user: AuthUser): void {
     this.userState.set(user);
     localStorage.setItem(USER_CACHE_KEY, JSON.stringify(user));
@@ -329,26 +298,65 @@ export class AuthService {
     return allPermissions;
   }
 
-  private mapAuthUser(user: {
-    id: string;
-    nombre: string;
-    email: string;
-    rol: string;
-    estado: boolean;
-    createdAt: string;
-    permisos: Array<{ modulo: string; permisos: string[] }>;
-  }): AuthUser {
+  private mapAuthUser(user: MeGraphql): AuthUser {
     return {
       id: user.id,
       _id: user.id,
       nombre: user.nombre,
       email: user.email,
       rol: user.rol,
+      esSuperAdmin: user.esSuperAdmin,
       estado: user.estado,
       createdAt: user.createdAt,
+      organization: user.organization
+        ? this.mapOrganization(user.organization)
+        : null,
+      ownerAdmin: user.ownerAdmin
+        ? {
+            _id: user.ownerAdmin.id,
+            nombre: user.ownerAdmin.nombre,
+            email: user.ownerAdmin.email,
+          }
+        : null,
       permisos: Object.fromEntries(
         (user.permisos ?? []).map((group) => [group.modulo, group.permisos]),
       ),
     };
   }
+
+  private mapOrganization(organization: {
+    id: string;
+    nombre: string;
+    slug: string;
+    estado: boolean;
+  }): OrganizationItem {
+    return {
+      _id: organization.id,
+      nombre: organization.nombre,
+      slug: organization.slug,
+      estado: organization.estado,
+    };
+  }
+}
+
+interface MeGraphql {
+  id: string;
+  nombre: string;
+  email: string;
+  rol: string;
+  esSuperAdmin: boolean;
+  estado: boolean;
+  createdAt: string;
+  organization?: {
+    id: string;
+    nombre: string;
+    slug: string;
+    estado: boolean;
+  } | null;
+  ownerAdmin?: {
+    id: string;
+    nombre: string;
+    email?: string;
+  } | null;
+  permisos: Array<{ modulo: string; permisos: string[] }>;
 }

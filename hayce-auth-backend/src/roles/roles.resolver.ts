@@ -14,33 +14,39 @@ export class RolesResolver {
   @RequirePermission('crear_rol')
   createRole(
     @Args('input') input: CreateRoleDto,
-    @CurrentUser() user: { nombre?: string },
+    @CurrentUser() user: { sub: string; nombre?: string; esSuperAdmin?: boolean },
   ) {
-    return this.rolesService.create(input, user?.nombre ?? 'Sistema');
+    return this.rolesService.create(input, user);
   }
 
   @Query(() => [Role])
   @RequirePermission('listar_roles')
-  roles() {
-    return this.rolesService.findAll();
+  roles(@CurrentUser() user: { sub: string; esSuperAdmin?: boolean }) {
+    return this.rolesService.findAll(user);
   }
 
   @Query(() => [Role])
   @RequirePermission('listar_roles')
-  inactiveRoles() {
-    return this.rolesService.findAllInactive();
+  inactiveRoles(@CurrentUser() user: { sub: string; esSuperAdmin?: boolean }) {
+    return this.rolesService.findAllInactive(user);
   }
 
   @Query(() => Role)
   @RequirePermission('listar_roles')
-  role(@Args('id') id: string) {
-    return this.rolesService.findOne(id);
+  role(
+    @Args('id') id: string,
+    @CurrentUser() user: { sub: string; esSuperAdmin?: boolean },
+  ) {
+    return this.rolesService.findOne(id, user);
   }
 
   @Query(() => Role)
   @RequirePermission('listar_roles')
-  inactiveRole(@Args('id') id: string) {
-    return this.rolesService.findOneInactive(id);
+  inactiveRole(
+    @Args('id') id: string,
+    @CurrentUser() user: { sub: string; esSuperAdmin?: boolean },
+  ) {
+    return this.rolesService.findOneInactive(id, user);
   }
 
   @Mutation(() => Role)
@@ -48,20 +54,26 @@ export class RolesResolver {
   updateRole(
     @Args('id') id: string,
     @Args('input') input: UpdateRoleDto,
-    @CurrentUser() user: { nombre?: string },
+    @CurrentUser() user: { sub: string; nombre?: string; esSuperAdmin?: boolean },
   ) {
-    return this.rolesService.update(id, input, user?.nombre ?? 'Sistema');
+    return this.rolesService.update(id, input, user);
   }
 
   @Mutation(() => Role)
   @RequirePermission('eliminar_rol')
-  removeRole(@Args('id') id: string) {
-    return this.rolesService.remove(id);
+  removeRole(
+    @Args('id') id: string,
+    @CurrentUser() user: { sub: string; esSuperAdmin?: boolean },
+  ) {
+    return this.rolesService.remove(id, user);
   }
 
   @Mutation(() => Role)
   @RequirePermission('eliminar_rol')
-  restoreRole(@Args('id') id: string) {
-    return this.rolesService.restore(id);
+  restoreRole(
+    @Args('id') id: string,
+    @CurrentUser() user: { sub: string; esSuperAdmin?: boolean },
+  ) {
+    return this.rolesService.restore(id, user);
   }
 }

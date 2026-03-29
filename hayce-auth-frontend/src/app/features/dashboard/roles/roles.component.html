@@ -30,13 +30,36 @@
 <!-- ================================================ -->
 <div class="mb-6 rounded-3xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
   <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-    <div class="w-full md:max-w-sm">
-      <app-input
-        placeholder="Buscar roles, descripcion o permisos..."
-        icon="search"
-        [ngModel]="searchTerm()"
-        (ngModelChange)="onSearch($event)"
-      />
+    <div class="flex w-full flex-col gap-3 md:max-w-3xl md:flex-row">
+      <div class="w-full md:max-w-sm">
+        <app-input
+          placeholder="Buscar roles, organizacion o permisos..."
+          icon="search"
+          [ngModel]="searchTerm()"
+          (ngModelChange)="onSearch($event)"
+        />
+      </div>
+
+      <div class="w-full md:max-w-xs">
+        <label for="organizationFilter" class="sr-only">Filtrar por organizacion</label>
+        <div class="relative">
+          <select
+            id="organizationFilter"
+            class="block w-full appearance-none rounded-xl border border-slate-200 bg-white px-4 py-2.5 pr-10 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+            [ngModel]="organizationFilter()"
+            (ngModelChange)="onOrganizationFilterChange($event)"
+          >
+            <option value="">Todas las organizaciones</option>
+            @for (organization of organizationOptions(); track organization.id) {
+              <option [value]="organization.id">{{ organization.nombre }}</option>
+            }
+          </select>
+
+          <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400">
+            <i class="icon text-lg">expand_more</i>
+          </div>
+        </div>
+      </div>
     </div>
 
     <div class="flex w-full flex-col gap-3 md:w-auto md:flex-row md:items-center md:justify-end">
@@ -82,6 +105,7 @@
       <thead class="bg-slate-50 text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
         <tr>
           <th class="px-6 py-4">Rol</th>
+          <th class="px-6 py-4">Organizacion</th>
           <th class="px-6 py-4">Descripcion</th>
           <th class="px-6 py-4">Permisos</th>
           <th class="px-6 py-4">Estado</th>
@@ -93,7 +117,7 @@
       <tbody class="divide-y divide-slate-200">
         @if (loading()) {
           <tr>
-            <td colspan="6" class="px-6 py-12 text-center">
+            <td colspan="7" class="px-6 py-12 text-center">
               <div class="flex flex-col items-center justify-center gap-3 text-slate-500">
                 <app-spinner size="lg" />
                 <p>Cargando roles...</p>
@@ -102,7 +126,7 @@
           </tr>
         } @else if (filteredRoles().length === 0) {
           <tr>
-            <td colspan="6" class="px-6 py-16 text-center">
+            <td colspan="7" class="px-6 py-16 text-center">
               <!-- ================================================ -->
               <!-- [ EMPTY STATE ] - SIN RESULTADOS                 -->
               <!-- ================================================ -->
@@ -128,7 +152,7 @@
             </td>
           </tr>
         } @else {
-          @for (role of filteredRoles(); track role._id) {
+          @for (role of paginatedRoles(); track role._id) {
             <tr class="transition-colors hover:bg-slate-50/80">
               <td class="px-6 py-4">
                 <div class="flex items-center gap-3">
@@ -142,6 +166,13 @@
                       {{ role.permisos.length }} permisos asignados
                     </div>
                   </div>
+                </div>
+              </td>
+
+              <td class="px-6 py-4">
+                <div class="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-medium text-slate-700">
+                  <i class="icon text-sm text-slate-500">apartment</i>
+                  <span>{{ getOrganizationName(role) }}</span>
                 </div>
               </td>
 
@@ -206,5 +237,39 @@
         }
       </tbody>
     </table>
+  </div>
+
+  <div footer class="flex w-full flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+    <div class="text-sm text-slate-500">
+      Mostrando
+      <span class="font-semibold text-slate-900">{{ paginatedRoles().length }}</span>
+      de
+      <span class="font-semibold text-slate-900">{{ filteredRoles().length }}</span>
+      roles
+    </div>
+
+    <div class="flex items-center justify-between gap-3 sm:justify-end">
+      <app-button
+        variant="ghost"
+        size="sm"
+        [disabled]="currentPage() === 1"
+        (onClick)="changePage(currentPage() - 1)"
+      >
+        Anterior
+      </app-button>
+
+      <div class="min-w-[4.5rem] text-center text-sm font-medium text-slate-700">
+        {{ currentPage() }} / {{ totalPages() }}
+      </div>
+
+      <app-button
+        variant="ghost"
+        size="sm"
+        [disabled]="currentPage() >= totalPages()"
+        (onClick)="changePage(currentPage() + 1)"
+      >
+        Siguiente
+      </app-button>
+    </div>
   </div>
 </app-card>

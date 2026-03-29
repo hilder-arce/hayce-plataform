@@ -4,11 +4,13 @@
 
 type Activity {
   createdAt: DateTime!
+  createdBy: User
   descripcion: String
   estacion: Station
   estado: Boolean!
   id: ID!
   nombre: String!
+  organization: Organization
   updatedAt: DateTime
 }
 
@@ -34,9 +36,12 @@ type AuthResponseData {
 type AuthUserProfile {
   createdAt: DateTime!
   email: String!
+  esSuperAdmin: Boolean!
   estado: Boolean!
   id: String!
   nombre: String!
+  organization: Organization
+  ownerAdmin: User
   permisos: [AuthPermissionGroup!]!
   rol: String
 }
@@ -57,6 +62,11 @@ input CreateModuleDto {
   nombre: String!
 }
 
+input CreateOrganizationDto {
+  nombre: String!
+  slug: String!
+}
+
 input CreatePermissionDto {
   descripcion: String!
   modulo: String!
@@ -66,12 +76,14 @@ input CreatePermissionDto {
 input CreateRoleDto {
   descripcion: String!
   nombre: String!
+  organization: String
   permisos: [String!]
 }
 
 input CreateStationDto {
   descripcion: String!
   nombre: String!
+  organization: String
 }
 
 input CreateTareoDto {
@@ -90,6 +102,7 @@ input CreateTareoDto {
 input CreateUserDto {
   email: String!
   nombre: String!
+  organization: String
   password: String!
   rol: String!
 }
@@ -99,6 +112,7 @@ input CreateWorkerDto {
   correo: String
   nombres: String!
   numero_telefono: String
+  organization: String
 }
 
 """
@@ -143,6 +157,7 @@ type Mutation {
   changeMyPassword(input: ChangePasswordDto!): MessageResponse!
   createActivity(input: CreateActivityDto!): Activity!
   createModule(input: CreateModuleDto!): Module!
+  createOrganization(input: CreateOrganizationDto!): Organization!
   createPermission(input: CreatePermissionDto!): Permission!
   createRole(input: CreateRoleDto!): Role!
   createStation(input: CreateStationDto!): Station!
@@ -158,6 +173,7 @@ type Mutation {
   removeActivity(id: String!): Activity!
   removeModule(id: String!): Module!
   removeNotification(id: String!): MessageResponse!
+  removeOrganization(id: String!): Organization!
   removePermission(id: String!): Permission!
   removeRole(id: String!): Role!
   removeStation(id: String!): Station!
@@ -167,6 +183,7 @@ type Mutation {
   resetPassword(input: ResetPasswordDto!): MessageResponse!
   restoreActivity(id: String!): Activity!
   restoreModule(id: String!): Module!
+  restoreOrganization(id: String!): Organization!
   restorePermission(id: String!): Permission!
   restoreRole(id: String!): Role!
   restoreStation(id: String!): Station!
@@ -177,6 +194,7 @@ type Mutation {
   updateActivity(id: String!, input: UpdateActivityDto!): Activity!
   updateModule(id: String!, input: UpdateModuleDto!): Module!
   updateMyProfile(input: UpdateUserDto!): User!
+  updateOrganization(id: String!, input: UpdateOrganizationDto!): Organization!
   updatePermission(id: String!, input: UpdatePermissionDto!): Permission!
   updateRole(id: String!, input: UpdateRoleDto!): Role!
   updateStation(id: String!, input: UpdateStationDto!): Station!
@@ -205,6 +223,19 @@ type NotificationsPage {
   total: Int!
 }
 
+type Organization {
+  createdAt: DateTime!
+  createdBy: User
+  estado: Boolean!
+  id: ID!
+  nombre: String!
+  principalAdmin: User
+  roleCount: Int!
+  slug: String!
+  updatedAt: DateTime
+  userCount: Int!
+}
+
 type Permission {
   createdAt: DateTime!
   descripcion: String
@@ -224,6 +255,7 @@ type Query {
   inactiveActivity(id: String!): Activity!
   inactiveModule(id: String!): Module!
   inactiveModules: [Module!]!
+  inactiveOrganizations: [Organization!]!
   inactivePermission(id: String!): Permission!
   inactivePermissions: [Permission!]!
   inactiveRole(id: String!): Role!
@@ -239,6 +271,8 @@ type Query {
   modules: [Module!]!
   myNotifications(limit: Int! = 10, page: Int! = 1, search: String): NotificationsPage!
   mySessions: [Session!]!
+  organization(id: String!): Organization!
+  organizations: [Organization!]!
   permission(id: String!): Permission!
   permissions: [Permission!]!
   role(id: String!): Role!
@@ -261,11 +295,15 @@ input ResetPasswordDto {
 }
 
 type Role {
+  ancestryPath: [User!]!
   createdAt: DateTime!
+  createdBy: User
   descripcion: String
   estado: Boolean!
   id: ID!
   nombre: String!
+  organization: Organization
+  ownerAdmin: User
   permisos: [Permission!]!
   updatedAt: DateTime
 }
@@ -285,10 +323,12 @@ type Session {
 
 type Station {
   createdAt: DateTime!
+  createdBy: User
   descripcion: String
   estado: Boolean!
   id: ID!
   nombre: String!
+  organization: Organization
   updatedAt: DateTime
 }
 
@@ -307,6 +347,7 @@ type Tareo {
   id: ID!
   numero_operacion: String!
   observacion: String
+  organization: Organization
   trabajador: Worker!
   updatedAt: DateTime
 }
@@ -326,6 +367,11 @@ input UpdateModuleDto {
   nombre: String
 }
 
+input UpdateOrganizationDto {
+  nombre: String
+  slug: String
+}
+
 input UpdatePermissionDto {
   descripcion: String
   nombre: String
@@ -334,6 +380,7 @@ input UpdatePermissionDto {
 input UpdateRoleDto {
   descripcion: String
   nombre: String
+  organization: String
   permisos: [String!]
   permisosEliminar: [String!]
 }
@@ -341,6 +388,7 @@ input UpdateRoleDto {
 input UpdateStationDto {
   descripcion: String
   nombre: String
+  organization: String
 }
 
 input UpdateTareoDto {
@@ -359,6 +407,7 @@ input UpdateTareoDto {
 input UpdateUserDto {
   email: String
   nombre: String
+  organization: String
   rol: String
 }
 
@@ -367,14 +416,20 @@ input UpdateWorkerDto {
   correo: String
   nombres: String
   numero_telefono: String
+  organization: String
 }
 
 type User {
+  ancestryPath: [User!]!
   createdAt: DateTime!
+  createdBy: User
   email: String!
+  esSuperAdmin: Boolean!
   estado: Boolean!
   id: ID!
   nombre: String!
+  organization: Organization
+  ownerAdmin: User
   rol: Role
   updatedAt: DateTime
 }
@@ -393,9 +448,11 @@ type Worker {
   apellidos: String!
   correo: String
   createdAt: DateTime!
+  createdBy: User
   estado: Boolean!
   id: ID!
   nombres: String!
   numero_telefono: String
+  organization: Organization
   updatedAt: DateTime
 }

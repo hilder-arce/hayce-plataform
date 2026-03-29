@@ -1,17 +1,22 @@
 import {
+  BadRequestException,
   ConflictException,
+  ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
+
+import { AccessActor, AccessControlService } from 'src/auth/authorization/access-control.service';
+import { Organization } from 'src/organizations/entities/organization.entity';
+import { Permission } from 'src/permissions/entities/permission.entity';
+import { NotificationsService } from 'src/notifications/notifications.service';
+import { User } from 'src/users/entities/user.entity';
 
 import { CreateRoleDto } from './dto/create-role.dto';
 import { UpdateRoleDto } from './dto/update-role.dto';
-
 import { Role } from './entities/role.entity';
-import { Permission } from 'src/permissions/entities/permission.entity';
-import { NotificationsService } from 'src/notifications/notifications.service';
 
 type RolePermissionRef = { _id?: string; nombre?: string } | string;
 
@@ -21,95 +26,103 @@ export class RolesService {
     @InjectModel(Role.name) private readonly roleModel: Model<Role>,
     @InjectModel(Permission.name)
     private readonly permissionModel: Model<Permission>,
+    @InjectModel(User.name) private readonly userModel: Model<User>,
+    @InjectModel(Organization.name)
+    private readonly organizationModel: Model<Organization>,
     private readonly notificationsService: NotificationsService,
+    private readonly accessControlService: AccessControlService,
   ) {}
 
-  // ======================================================
-  // [ CREATE ] - REGISTRO DE NUEVOS ROLES EN EL SISTEMA
-  // ======================================================
-  async create(createRoleDto: CreateRoleDto, creadoPor: string): Promise<Role> {
+  async create(createRoleDto: CreateRoleDto, actorContext: AccessActor): Promise<Role> {
+    const actor = await this.accessControlService.getActor(actorContext.sub);
+    const organizationId = await this.resolveOrganizationId(actor, createRoleDto.organization);
+
     const existingRole = await this.roleModel.findOne({
       nombre: createRoleDto.nombre,
+      organization: organizationId ? new Types.ObjectId(organizationId) : null,
     });
     if (existingRole) {
       throw new ConflictException(
-        `Conflicto: El rol con el nombre "${createRoleDto.nombre}" ya existe`,
+        `Conflicto: El rol con el nombre "${createRoleDto.nombre}" ya existe en esta organización`,
       );
     }
 
-    if (createRoleDto.permisos && createRoleDto.permisos.length > 0) {
-      for (const permisoId of createRoleDto.permisos) {
+    const permissionIds = createRoleDto.permisos ?? [];
+    if (permissionIds.length > 0) {
+      await this.accessControlService.validatePermissionSubset(actor, permissionIds);
+      for (const permisoId of permissionIds) {
         await this.findOnePermission(permisoId);
       }
     }
 
-    const role = new this.roleModel(createRoleDto);
+    const ownerAdminId = await this.resolveOwnerAdminId(actor, organizationId);
+    const role = new this.roleModel({
+      nombre: createRoleDto.nombre,
+      descripcion: createRoleDto.descripcion,
+      permisos: permissionIds,
+      organization: organizationId ? new Types.ObjectId(organizationId) : null,
+      createdBy: new Types.ObjectId(actor._id),
+      ownerAdmin: ownerAdminId ? new Types.ObjectId(ownerAdminId) : null,
+      ancestryPath: actor.esSuperAdmin ? [] : this.accessControlService.buildAncestryPath(actor),
+    });
     const savedRole = await role.save();
 
     await this.notificationsService.notificarNuevoRol(
       createRoleDto.nombre,
-      creadoPor,
+      actor.nombre ?? 'Sistema',
     );
 
-    return savedRole;
+    return this.findOne(savedRole._id.toString(), actorContext);
   }
 
-  // ======================================================
-  // [ READ ] - OBTENER LISTADO COMPLETO DE ROLES ACTIVOS
-  // ======================================================
-  async findAll(): Promise<Role[]> {
-    return await this.roleModel
-      .find({ estado: true })
+  async findAll(actorContext: AccessActor): Promise<Role[]> {
+    const actor = await this.accessControlService.getActor(actorContext.sub);
+
+    return this.roleModel
+      .find(this.buildScopeQuery(actor, true))
       .select('-__v')
-      .populate({
-        path: 'permisos',
-        select: 'nombre descripcion estado modulo _id',
-        populate: { path: 'modulo', select: 'nombre descripcion estado _id' },
-      })
+      .populate(this.rolePopulation())
+      .sort({ nombre: 1 })
       .exec();
   }
 
-  // ======================================================
-  // [ READ ] - BUSQUEDA DE ROL ACTIVO POR ID
-  // ======================================================
-  async findOne(id: string): Promise<Role> {
-    const role = await this.roleModel
-      .findById(id)
-      .select('-__v')
-      .populate({
-        path: 'permisos',
-        select: 'nombre descripcion estado modulo _id',
-        populate: { path: 'modulo', select: 'nombre descripcion estado _id' },
-      })
-      .exec();
+  async findOne(id: string, actorContext?: AccessActor): Promise<Role> {
+    const role = await this.findRole(id, true);
 
-    if (!role) throw new NotFoundException(`Rol con ID "${id}" no encontrado`);
-    if (!role.estado)
-      throw new NotFoundException('El rol solicitado se encuentra inactivo');
+    if (actorContext) {
+      const actor = await this.accessControlService.getActor(actorContext.sub);
+      this.assertCanAccessRole(actor, role);
+    }
 
     return role;
   }
 
-  // ======================================================
-  // [ UPDATE ] - ACTUALIZACION DE DATOS Y PERMISOS DE ROL
-  // ======================================================
   async update(
     id: string,
     updateRoleDto: UpdateRoleDto,
-    actualizadoPor = 'Sistema',
+    actorContext: AccessActor,
   ): Promise<Role> {
-    const currentRole = await this.findOne(id);
+    const actor = await this.accessControlService.getActor(actorContext.sub);
+    const currentRole = await this.findOne(id, actorContext);
+
+    this.assertCanManageRole(actor, currentRole);
     const currentPermissionMap = this.buildPermissionMap(
       currentRole.permisos as RolePermissionRef[],
     );
 
-    if (updateRoleDto.permisos && updateRoleDto.permisos.length > 0) {
-      for (const permissionId of updateRoleDto.permisos) {
+    const incomingAdditions = updateRoleDto.permisos ?? [];
+    if (incomingAdditions.length > 0) {
+      await this.accessControlService.validatePermissionSubset(actor, incomingAdditions);
+      for (const permissionId of incomingAdditions) {
         await this.findOnePermission(permissionId);
       }
     }
 
-    const { permisos, permisosEliminar, ...otrosCampos } = updateRoleDto;
+    const { permisos, permisosEliminar, organization, ...otrosCampos } = updateRoleDto as UpdateRoleDto & {
+      organization?: string;
+    };
+    void organization;
+
     const updateData: Record<string, unknown> = { ...otrosCampos };
 
     if (
@@ -131,6 +144,7 @@ export class RolesService {
         }
       }
 
+      await this.accessControlService.validatePermissionSubset(actor, [...finalPermissions]);
       updateData.permisos = [...finalPermissions];
     }
 
@@ -139,7 +153,7 @@ export class RolesService {
       .select('-__v')
       .exec();
 
-    const updatedRole = await this.findOne(id);
+    const updatedRole = await this.findOne(id, actorContext);
     const updatedPermissionMap = this.buildPermissionMap(
       updatedRole.permisos as RolePermissionRef[],
     );
@@ -157,71 +171,60 @@ export class RolesService {
       updatedRole.nombre,
       permisosAgregados,
       permisosEliminados,
-      actualizadoPor,
+      actor.nombre ?? 'Sistema',
     );
 
     return updatedRole;
   }
 
-  // ======================================================
-  // [ DELETE ] - DESACTIVACION LOGICA DE ROL
-  // ======================================================
-  async remove(id: string): Promise<Role> {
-    const role = await this.findOne(id);
-    role.estado = false;
-    return await role.save();
+  async remove(id: string, actorContext: AccessActor): Promise<Role> {
+    const actor = await this.accessControlService.getActor(actorContext.sub);
+    const role = await this.findOne(id, actorContext);
+    this.assertCanManageRole(actor, role);
+
+    await this.roleModel
+      .findByIdAndUpdate(id, { estado: false }, { returnDocument: 'after' })
+      .select('-__v')
+      .exec();
+
+    return this.findOneInactive(id, actorContext);
   }
 
-  // ======================================================
-  // [ READ ] - OBTENER LISTADO DE ROLES INACTIVOS
-  // ======================================================
-  async findAllInactive(): Promise<Role[]> {
-    return await this.roleModel
-      .find({ estado: false })
+  async findAllInactive(actorContext: AccessActor): Promise<Role[]> {
+    const actor = await this.accessControlService.getActor(actorContext.sub);
+
+    return this.roleModel
+      .find(this.buildScopeQuery(actor, false))
       .select('-__v')
-      .populate({
-        path: 'permisos',
-        select: 'nombre descripcion estado modulo _id',
-        populate: { path: 'modulo', select: 'nombre descripcion estado _id' },
-      })
+      .populate(this.rolePopulation())
+      .sort({ nombre: 1 })
       .exec();
   }
 
-  // ======================================================
-  // [ RESTORE ] - REACTIVACION DE ROL ELIMINADO
-  // ======================================================
-  async restore(id: string): Promise<Role> {
-    await this.findOneInactive(id);
-    return (await this.roleModel
+  async restore(id: string, actorContext: AccessActor): Promise<Role> {
+    const actor = await this.accessControlService.getActor(actorContext.sub);
+    const role = await this.findOneInactive(id, actorContext);
+    this.assertCanManageRole(actor, role);
+
+    await this.roleModel
       .findByIdAndUpdate(id, { estado: true }, { returnDocument: 'after' })
       .select('-__v')
-      .exec()) as Role;
-  }
-
-  // ======================================================
-  // [ READ ] - CONSULTA DE ROL INACTIVO POR ID
-  // ======================================================
-  async findOneInactive(id: string): Promise<Role> {
-    const role = await this.roleModel
-      .findById(id)
-      .select('-__v')
-      .populate({
-        path: 'permisos',
-        select: 'nombre descripcion estado modulo _id',
-        populate: { path: 'modulo', select: 'nombre descripcion estado _id' },
-      })
       .exec();
 
-    if (!role) throw new NotFoundException('Rol no localizado');
-    if (role.estado)
-      throw new ConflictException('El rol consultado ya esta activo');
+    return this.findOne(id, actorContext);
+  }
+
+  async findOneInactive(id: string, actorContext?: AccessActor): Promise<Role> {
+    const role = await this.findRole(id, false);
+
+    if (actorContext) {
+      const actor = await this.accessControlService.getActor(actorContext.sub);
+      this.assertCanAccessRole(actor, role);
+    }
 
     return role;
   }
 
-  // ======================================================
-  // [ HELPERS ] - VALIDACION INTERNA DE PERMISOS
-  // ======================================================
   async findOnePermission(id: string): Promise<Permission> {
     const permission = await this.permissionModel
       .findById(id)
@@ -236,6 +239,23 @@ export class RolesService {
       );
 
     return permission;
+  }
+
+  private async findRole(id: string, estado: boolean): Promise<Role> {
+    const role = await this.roleModel
+      .findById(id)
+      .select('-__v')
+      .populate(this.rolePopulation())
+      .exec();
+
+    if (!role) throw new NotFoundException(`Rol con ID "${id}" no encontrado`);
+    if (role.estado !== estado) {
+      throw new NotFoundException(
+        `El rol solicitado se encuentra ${estado ? 'inactivo' : 'activo'}`,
+      );
+    }
+
+    return role;
   }
 
   private buildPermissionMap(
@@ -254,5 +274,122 @@ export class RolesService {
         })
         .filter(([permissionId]) => !!permissionId),
     );
+  }
+
+  private buildScopeQuery(actor: User, estado: boolean) {
+    const query: Record<string, any> = { estado };
+
+    if (actor.esSuperAdmin) {
+      return query;
+    }
+
+    query.organization = actor.organization;
+
+    if (!this.accessControlService.canManageWholeOrganization(actor)) {
+      query.$or = [
+        { createdBy: actor._id },
+        { ancestryPath: actor._id },
+      ];
+    }
+
+    return query;
+  }
+
+  private rolePopulation() {
+    return [
+      {
+        path: 'permisos',
+        select: 'nombre descripcion estado modulo _id',
+        populate: { path: 'modulo', select: 'nombre descripcion estado _id' },
+      },
+      {
+        path: 'organization',
+        select: 'nombre slug estado _id',
+      },
+      {
+        path: 'createdBy',
+        select: 'nombre email _id',
+      },
+      {
+        path: 'ownerAdmin',
+        select: 'nombre email _id',
+      },
+    ];
+  }
+
+  private assertCanAccessRole(actor: User, role: Role): void {
+    if (actor.esSuperAdmin) {
+      return;
+    }
+
+    this.accessControlService.ensureSameOrganization(actor, role.organization);
+    if (!this.accessControlService.canManageWholeOrganization(actor) &&
+        !this.accessControlService.canManageDescendant(actor, role)) {
+      throw new ForbiddenException(
+        'No puedes ver roles fuera de tu alcance jerárquico',
+      );
+    }
+  }
+
+  private assertCanManageRole(actor: User, role: Role): void {
+    this.assertCanAccessRole(actor, role);
+
+    if (!actor.esSuperAdmin && role.ownerAdmin?.toString() === role.createdBy?.toString() && role.createdBy?.toString() === role.ownerAdmin?.toString() && role.ownerAdmin?.toString() === actor.ownerAdmin?.toString() && !this.accessControlService.canManageWholeOrganization(actor)) {
+      throw new ForbiddenException(
+        'No puedes modificar roles fuera de tu subárbol',
+      );
+    }
+  }
+
+  private async resolveOrganizationId(
+    actor: User,
+    requestedOrganizationId?: string,
+  ): Promise<string> {
+    if (actor.esSuperAdmin) {
+      if (!requestedOrganizationId) {
+        throw new BadRequestException(
+          'Debes indicar la organización para crear el rol',
+        );
+      }
+
+      const organization = await this.organizationModel
+        .findOne({ _id: requestedOrganizationId, estado: true })
+        .select('_id')
+        .exec();
+
+      if (!organization) {
+        throw new NotFoundException('Organización no encontrada');
+      }
+
+      return organization._id.toString();
+    }
+
+    if (!actor.organization) {
+      throw new ForbiddenException(
+        'Tu usuario no tiene una organización asignada',
+      );
+    }
+
+    return actor.organization.toString();
+  }
+
+  private async resolveOwnerAdminId(
+    actor: User,
+    organizationId: string,
+  ): Promise<string | null> {
+    if (!actor.esSuperAdmin) {
+      return actor.ownerAdmin?.toString() ?? actor._id.toString();
+    }
+
+    const ownerAdmin = await this.userModel
+      .findOne({
+        organization: new Types.ObjectId(organizationId),
+        estado: true,
+        $expr: { $eq: ['$_id', '$ownerAdmin'] },
+      })
+      .select('_id')
+      .exec();
+
+    return ownerAdmin?._id?.toString?.() ?? null;
   }
 }

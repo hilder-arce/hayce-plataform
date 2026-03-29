@@ -5,6 +5,8 @@ import {
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
+import { ForbiddenException } from '@nestjs/common';
+import { AccessActor } from 'src/auth/authorization/access-control.service';
 
 import { CreateModuleDto } from './dto/create-module.dto';
 import { UpdateModuleDto } from './dto/update-module.dto';
@@ -22,7 +24,16 @@ export class ModulesService {
   // ======================================================
   // [ CREATE ] - REGISTRO DE NUEVOS MÓDULOS EN EL SISTEMA
   // ======================================================
-  async create(createModuleDto: CreateModuleDto): Promise<Module> {
+  async create(
+    createModuleDto: CreateModuleDto,
+    actor?: AccessActor,
+  ): Promise<Module> {
+    if (!actor?.esSuperAdmin) {
+      throw new ForbiddenException(
+        'Solo el superadmin puede crear módulos globales',
+      );
+    }
+
     try {
       // PERSISTENCIA DEL NUEVO MÓDULO EN BASE DE DATOS
       const newModule = new this.moduleModel(createModuleDto);
@@ -62,7 +73,17 @@ export class ModulesService {
   // ======================================================
   // [ UPDATE ] - ACTUALIZACIÓN DE DATOS DE MÓDULO
   // ======================================================
-  async update(id: string, updateModuleDto: UpdateModuleDto): Promise<Module> {
+  async update(
+    id: string,
+    updateModuleDto: UpdateModuleDto,
+    actor?: AccessActor,
+  ): Promise<Module> {
+    if (!actor?.esSuperAdmin) {
+      throw new ForbiddenException(
+        'Solo el superadmin puede actualizar módulos globales',
+      );
+    }
+
     // VALIDACIÓN PREVIA DE EXISTENCIA Y ESTADO
     await this.findOne(id);
 
@@ -75,7 +96,13 @@ export class ModulesService {
   // ======================================================
   // [ DELETE ] - DESACTIVACIÓN LÓGICA DE MÓDULO Y PERMISOS
   // ======================================================
-  async remove(id: string): Promise<Module> {
+  async remove(id: string, actor?: AccessActor): Promise<Module> {
+    if (!actor?.esSuperAdmin) {
+      throw new ForbiddenException(
+        'Solo el superadmin puede desactivar módulos globales',
+      );
+    }
+
     await this.findOne(id);
 
     // DESACTIVACIÓN EN CASCADA DE PERMISOS ASOCIADOS
@@ -97,7 +124,13 @@ export class ModulesService {
   // ======================================================
   // [ RESTORE ] - REACTIVACIÓN DE MÓDULO Y PERMISOS
   // ======================================================
-  async restore(id: string): Promise<Module> {
+  async restore(id: string, actor?: AccessActor): Promise<Module> {
+    if (!actor?.esSuperAdmin) {
+      throw new ForbiddenException(
+        'Solo el superadmin puede restaurar módulos globales',
+      );
+    }
+
     const module = await this.findOneInactive(id);
 
     module.estado = true;

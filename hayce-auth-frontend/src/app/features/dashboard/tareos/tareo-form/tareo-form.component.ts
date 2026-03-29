@@ -209,7 +209,15 @@ export class TareoFormComponent implements OnInit {
     const diffMinutes = finHours * 60 + finMinutes - (iniHours * 60 + iniMinutes);
 
     this.timeRangeError.set(null);
-    this.calculatedHours.set((diffMinutes / 60).toFixed(2));
+
+    const hours = Math.floor(diffMinutes / 60);
+    const minutes = diffMinutes % 60;
+
+    const formatted = `${hours.toString().padStart(2, '0')}:${minutes
+      .toString()
+      .padStart(2, '0')}`;
+
+    this.calculatedHours.set(formatted);
   }
 
   protected onSubmit(): void {

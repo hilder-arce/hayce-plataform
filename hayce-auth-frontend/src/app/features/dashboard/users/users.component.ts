@@ -45,6 +45,7 @@ export class UsersComponent {
   // [ ESTADO ] - SIGNALS LOCALES
   // ==========================================
   readonly searchTerm = signal('');
+  readonly organizationFilter = signal('');
   readonly currentPage = signal(1);
   readonly showInactive = signal(false);
   readonly limit = 10;
@@ -101,13 +102,51 @@ export class UsersComponent {
   });
 
   readonly totalPages = computed(() => Math.ceil(this.usersResource().total / this.limit));
+  readonly organizationOptions = computed(() => {
+    const organizations = new Map<string, string>();
+
+    this.usersResource().items.forEach((user) => {
+      if (user.organization?._id) {
+        organizations.set(user.organization._id, user.organization.nombre);
+      }
+    });
+
+    return [...organizations.entries()]
+      .map(([id, nombre]) => ({ id, nombre }))
+      .sort((a, b) => a.nombre.localeCompare(b.nombre));
+  });
+
+  readonly filteredUsers = computed(() => {
+    const term = this.searchTerm().trim().toLowerCase();
+    const selectedOrganizationId = this.organizationFilter();
+
+    return this.usersResource().items.filter((user) => {
+      const organizationName = user.organization?.nombre?.toLowerCase() ?? '';
+      const createdByName = user.createdBy?.nombre?.toLowerCase() ?? '';
+      const matchesSearch =
+        !term ||
+        user.nombre.toLowerCase().includes(term) ||
+        user.email.toLowerCase().includes(term) ||
+        this.getRoleName(user).toLowerCase().includes(term) ||
+        organizationName.includes(term) ||
+        createdByName.includes(term);
+
+      const matchesOrganization =
+        !selectedOrganizationId || user.organization?._id === selectedOrganizationId;
+
+      return matchesSearch && matchesOrganization;
+    });
+  });
 
   // ==========================================
   // [ ACCIONES ] - EVENTOS DE UI
   // ==========================================
   onSearch(term: string): void {
     this.searchTerm.set(term);
-    this.currentPage.set(1);
+  }
+
+  onOrganizationFilterChange(organizationId: string): void {
+    this.organizationFilter.set(organizationId);
   }
 
   toggleInactive(): void {
@@ -152,6 +191,14 @@ export class UsersComponent {
   // ==========================================
   protected getRoleName(user: User): string {
     return typeof user.rol === 'string' ? user.rol : user.rol?.nombre;
+  }
+
+  protected getOrganizationName(user: User): string {
+    return user.organization?.nombre ?? 'Sistema';
+  }
+
+  protected getCreatedByName(user: User): string {
+    return user.createdBy?.nombre ?? 'Sistema';
   }
 
   private forceRefresh(): void {

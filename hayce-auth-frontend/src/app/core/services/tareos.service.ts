@@ -15,9 +15,6 @@ import { GraphqlApiService } from './graphql-api.service';
 export class TareosService {
   private readonly graphql = inject(GraphqlApiService);
 
-  // ==========================================
-  // [ GET ] - LISTADO DE TAREOS
-  // ==========================================
   getTareos(): Observable<AppTareoItem[]> {
     return this.graphql
       .query<{ tareos: TareoGraphql[] }>(
@@ -35,6 +32,12 @@ export class TareosService {
               estado_tareo
               estado
               estacion
+              organization {
+                id
+                nombre
+                slug
+                estado
+              }
               creado_por {
                 id
                 nombre
@@ -44,13 +47,31 @@ export class TareosService {
                 id
                 nombres
                 apellidos
+                organization {
+                  id
+                  nombre
+                  slug
+                  estado
+                }
               }
               actividad {
                 id
                 nombre
+                organization {
+                  id
+                  nombre
+                  slug
+                  estado
+                }
                 estacion {
                   id
                   nombre
+                  organization {
+                    id
+                    nombre
+                    slug
+                    estado
+                  }
                 }
               }
             }
@@ -60,9 +81,6 @@ export class TareosService {
       .pipe(map((response) => (response.tareos ?? []).map((tareo) => this.mapTareo(tareo))));
   }
 
-  // ==========================================
-  // [ GET ] - OBTENER UN TAREO POR ID
-  // ==========================================
   getTareoById(id: string): Observable<AppTareoItem> {
     return this.graphql
       .query<{ tareo: TareoGraphql }>(
@@ -80,6 +98,12 @@ export class TareosService {
               estado_tareo
               estado
               estacion
+              organization {
+                id
+                nombre
+                slug
+                estado
+              }
               creado_por {
                 id
                 nombre
@@ -89,13 +113,31 @@ export class TareosService {
                 id
                 nombres
                 apellidos
+                organization {
+                  id
+                  nombre
+                  slug
+                  estado
+                }
               }
               actividad {
                 id
                 nombre
+                organization {
+                  id
+                  nombre
+                  slug
+                  estado
+                }
                 estacion {
                   id
                   nombre
+                  organization {
+                    id
+                    nombre
+                    slug
+                    estado
+                  }
                 }
               }
             }
@@ -106,9 +148,6 @@ export class TareosService {
       .pipe(map((response) => this.mapTareo(response.tareo)));
   }
 
-  // ==========================================
-  // [ POST ] - REGISTRAR TAREO
-  // ==========================================
   createTareo(payload: CreateTareoPayload): Observable<AppTareoItem> {
     return this.graphql
       .mutate<{ createTareo: TareoGraphql }>(
@@ -118,17 +157,55 @@ export class TareosService {
               id
               numero_operacion
               chasis
-              estacion
+              fecha
+              hora_ini
+              hora_fin
+              horas
+              observacion
               estado_tareo
-              trabajador {
+              estado
+              estacion
+              organization {
                 id
-                nombres
-                apellidos
+                nombre
+                slug
+                estado
               }
               creado_por {
                 id
                 nombre
                 email
+              }
+              trabajador {
+                id
+                nombres
+                apellidos
+                organization {
+                  id
+                  nombre
+                  slug
+                  estado
+                }
+              }
+              actividad {
+                id
+                nombre
+                organization {
+                  id
+                  nombre
+                  slug
+                  estado
+                }
+                estacion {
+                  id
+                  nombre
+                  organization {
+                    id
+                    nombre
+                    slug
+                    estado
+                  }
+                }
               }
             }
           }
@@ -138,9 +215,6 @@ export class TareosService {
       .pipe(map((response) => this.mapTareo(response.createTareo)));
   }
 
-  // ==========================================
-  // [ PATCH ] - ACTUALIZAR TAREO
-  // ==========================================
   updateTareo(id: string, payload: UpdateTareoPayload): Observable<AppTareoItem> {
     return this.graphql
       .mutate<{ updateTareo: TareoGraphql }>(
@@ -150,17 +224,55 @@ export class TareosService {
               id
               numero_operacion
               chasis
-              estacion
+              fecha
+              hora_ini
+              hora_fin
+              horas
+              observacion
               estado_tareo
-              trabajador {
+              estado
+              estacion
+              organization {
                 id
-                nombres
-                apellidos
+                nombre
+                slug
+                estado
               }
               creado_por {
                 id
                 nombre
                 email
+              }
+              trabajador {
+                id
+                nombres
+                apellidos
+                organization {
+                  id
+                  nombre
+                  slug
+                  estado
+                }
+              }
+              actividad {
+                id
+                nombre
+                organization {
+                  id
+                  nombre
+                  slug
+                  estado
+                }
+                estacion {
+                  id
+                  nombre
+                  organization {
+                    id
+                    nombre
+                    slug
+                    estado
+                  }
+                }
               }
             }
           }
@@ -170,9 +282,6 @@ export class TareosService {
       .pipe(map((response) => this.mapTareo(response.updateTareo)));
   }
 
-  // ==========================================
-  // [ DELETE ] - DESACTIVACIÓN LÓGICA
-  // ==========================================
   deleteTareo(id: string): Observable<AppTareoItem> {
     return this.graphql
       .mutate<{ removeTareo: TareoGraphql }>(
@@ -180,13 +289,131 @@ export class TareosService {
           mutation RemoveTareo($id: String!) {
             removeTareo(id: $id) {
               id
+              numero_operacion
+              chasis
+              fecha
+              hora_ini
+              hora_fin
+              horas
+              observacion
+              estado_tareo
               estado
+              estacion
+              organization {
+                id
+                nombre
+                slug
+                estado
+              }
+              creado_por {
+                id
+                nombre
+                email
+              }
+              trabajador {
+                id
+                nombres
+                apellidos
+                organization {
+                  id
+                  nombre
+                  slug
+                  estado
+                }
+              }
+              actividad {
+                id
+                nombre
+                organization {
+                  id
+                  nombre
+                  slug
+                  estado
+                }
+                estacion {
+                  id
+                  nombre
+                  organization {
+                    id
+                    nombre
+                    slug
+                    estado
+                  }
+                }
+              }
             }
           }
         `,
         { id },
       )
       .pipe(map((response) => this.mapTareo(response.removeTareo)));
+  }
+
+  restoreTareo(id: string): Observable<AppTareoItem> {
+    return this.graphql
+      .mutate<{ restoreTareo: TareoGraphql }>(
+        `
+          mutation RestoreTareo($id: String!) {
+            restoreTareo(id: $id) {
+              id
+              numero_operacion
+              chasis
+              fecha
+              hora_ini
+              hora_fin
+              horas
+              observacion
+              estado_tareo
+              estado
+              estacion
+              organization {
+                id
+                nombre
+                slug
+                estado
+              }
+              creado_por {
+                id
+                nombre
+                email
+              }
+              trabajador {
+                id
+                nombres
+                apellidos
+                organization {
+                  id
+                  nombre
+                  slug
+                  estado
+                }
+              }
+              actividad {
+                id
+                nombre
+                organization {
+                  id
+                  nombre
+                  slug
+                  estado
+                }
+                estacion {
+                  id
+                  nombre
+                  organization {
+                    id
+                    nombre
+                    slug
+                    estado
+                  }
+                }
+              }
+            }
+          }
+        `,
+        { id },
+      )
+      .pipe(map((response) => this.mapTareo(response.restoreTareo)));
   }
 
   private mapTareo(tareo: TareoGraphql): AppTareoItem {
@@ -202,6 +429,14 @@ export class TareosService {
       estado_tareo: tareo.estado_tareo,
       estado: tareo.estado,
       estacion: tareo.estacion,
+      organization: tareo.organization
+        ? {
+            _id: tareo.organization.id,
+            nombre: tareo.organization.nombre,
+            slug: tareo.organization.slug,
+            estado: tareo.organization.estado,
+          }
+        : null,
       creado_por: {
         _id: tareo.creado_por?.id,
         nombre: tareo.creado_por?.nombre,
@@ -211,18 +446,50 @@ export class TareosService {
         _id: tareo.trabajador?.id,
         nombres: tareo.trabajador?.nombres,
         apellidos: tareo.trabajador?.apellidos,
+        organization: tareo.trabajador?.organization
+          ? {
+              _id: tareo.trabajador.organization.id,
+              nombre: tareo.trabajador.organization.nombre,
+              slug: tareo.trabajador.organization.slug,
+              estado: tareo.trabajador.organization.estado,
+            }
+          : null,
       },
       actividad: {
         _id: tareo.actividad?.id,
         nombre: tareo.actividad?.nombre,
+        organization: tareo.actividad?.organization
+          ? {
+              _id: tareo.actividad.organization.id,
+              nombre: tareo.actividad.organization.nombre,
+              slug: tareo.actividad.organization.slug,
+              estado: tareo.actividad.organization.estado,
+            }
+          : null,
         estacion: {
           _id: tareo.actividad?.estacion?.id,
           nombre: tareo.actividad?.estacion?.nombre,
-        }
+          organization: tareo.actividad?.estacion?.organization
+            ? {
+                _id: tareo.actividad.estacion.organization.id,
+                nombre: tareo.actividad.estacion.organization.nombre,
+                slug: tareo.actividad.estacion.organization.slug,
+                estado: tareo.actividad.estacion.organization.estado,
+              }
+            : null,
+        },
       } as any,
       estacion_ref: {
         _id: tareo.actividad?.estacion?.id,
         nombre: tareo.actividad?.estacion?.nombre,
+        organization: tareo.actividad?.estacion?.organization
+          ? {
+              _id: tareo.actividad.estacion.organization.id,
+              nombre: tareo.actividad.estacion.organization.nombre,
+              slug: tareo.actividad.estacion.organization.slug,
+              estado: tareo.actividad.estacion.organization.estado,
+            }
+          : null,
       },
     };
   }
@@ -240,6 +507,12 @@ interface TareoGraphql {
   estado_tareo: any;
   estado: boolean;
   estacion: string;
+  organization?: {
+    id: string;
+    nombre: string;
+    slug: string;
+    estado: boolean;
+  } | null;
   creado_por?: {
     id: string;
     nombre: string;
@@ -249,13 +522,31 @@ interface TareoGraphql {
     id: string;
     nombres: string;
     apellidos: string;
+    organization?: {
+      id: string;
+      nombre: string;
+      slug: string;
+      estado: boolean;
+    } | null;
   };
   actividad?: {
     id: string;
     nombre: string;
+    organization?: {
+      id: string;
+      nombre: string;
+      slug: string;
+      estado: boolean;
+    } | null;
     estacion?: {
       id: string;
       nombre: string;
-    }
+      organization?: {
+        id: string;
+        nombre: string;
+        slug: string;
+        estado: boolean;
+      } | null;
+    };
   };
 }

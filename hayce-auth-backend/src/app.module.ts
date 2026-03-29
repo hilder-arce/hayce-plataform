@@ -11,6 +11,7 @@ import { UsersModule } from './users/users.module';
 import { RolesModule } from './roles/roles.module';
 import { PermissionsModule } from './permissions/permissions.module';
 import { ModulesModule } from './modules/modules.module';
+import { OrganizationsModule } from './organizations/organizations.module';
 import { StationsModule } from './stations/stations.module';
 import { ActivitiesModule } from './activities/activities.module';
 import { WorkersModule } from './workers/workers.module';
@@ -36,6 +37,8 @@ import { TareoModule } from './tareo/tareo.module';
     MongooseModule.forRootAsync({
       useFactory: (configService: ConfigService) => ({
         uri: configService.get<string>('MONGODB_URI'),
+        serverSelectionTimeoutMS: 10000,
+        connectTimeoutMS: 10000,
       }),
       inject: [ConfigService],
     }),
@@ -66,6 +69,7 @@ import { TareoModule } from './tareo/tareo.module';
     RolesModule,
     PermissionsModule,
     ModulesModule,
+    OrganizationsModule,
     StationsModule,
     ActivitiesModule,
     WorkersModule,

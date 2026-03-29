@@ -24,4 +24,9 @@ export class CreateRoleDto {
   @IsOptional()
   @Field(() => [String], { nullable: true })
   permisos?: string[]; //ARRAY DE IDS DE PERMISOS QUE PERTENECEN A ESTE ROL
+
+  @IsMongoId()
+  @IsOptional()
+  @Field({ nullable: true })
+  organization?: string;
 }

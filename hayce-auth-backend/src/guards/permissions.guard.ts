@@ -29,6 +29,7 @@ export class PermissionsGuard implements CanActivate {
     const user = req['user'];
 
     if (!user) throw new ForbiddenException('No autenticado');
+    if (user.esSuperAdmin) return true;
 
     const permisosUsuario: string[] = user.permisos || [];
 

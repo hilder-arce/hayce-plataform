@@ -12,12 +12,14 @@ import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { EMPTY, Observable, of } from 'rxjs';
 import { finalize, switchMap } from 'rxjs/operators';
 
-import { AlertService } from '../../../../core/services/alert.service';
-import { AuthService } from '../../../../core/services/auth.service';
-import { RolesService } from '../../../../core/services/roles.service';
-import { UsersService } from '../../../../core/services/users.service';
+import { OrganizationItem } from '../../../../core/models/organization.models';
 import { Role } from '../../../../core/models/role.models';
 import { User, UserFormData } from '../../../../core/models/user.models';
+import { AlertService } from '../../../../core/services/alert.service';
+import { AuthService } from '../../../../core/services/auth.service';
+import { OrganizationsService } from '../../../../core/services/organizations.service';
+import { RolesService } from '../../../../core/services/roles.service';
+import { UsersService } from '../../../../core/services/users.service';
 import { ButtonComponent } from '../../../../shared/components/button/button.component';
 import { CardComponent } from '../../../../shared/components/card/card.component';
 import { InputComponent } from '../../../../shared/components/input/input.component';
@@ -26,6 +28,7 @@ import { SpinnerComponent } from '../../../../shared/components/spinner/spinner.
 type UserFormGroup = FormGroup<{
   nombre: FormControl<string>;
   email: FormControl<string>;
+  organization: FormControl<string>;
   rol: FormControl<string>;
   password: FormControl<string>;
   adminPassword: FormControl<string>;
@@ -46,9 +49,6 @@ type UserFormGroup = FormGroup<{
   templateUrl: './user-form.component.html',
 })
 export class UserFormComponent implements OnInit {
-  // ==========================================
-  // [ DEPENDENCIAS ] - SERVICIOS INYECTADOS
-  // ==========================================
   private readonly fb = inject(FormBuilder);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
@@ -56,41 +56,55 @@ export class UserFormComponent implements OnInit {
   private readonly alertService = inject(AlertService);
   private readonly authService = inject(AuthService);
   private readonly rolesService = inject(RolesService);
+  private readonly organizationsService = inject(OrganizationsService);
 
-  // ==========================================
-  // [ ESTADO ] - FORMULARIO Y SIGNALS
-  // ==========================================
   protected userForm: UserFormGroup;
   protected loading = signal(true);
   protected isEditMode = signal(false);
   protected userId: string | null = null;
   protected roles = signal<Role[]>([]);
+  protected organizations = signal<OrganizationItem[]>([]);
   protected readonly currentUser = this.authService.currentUser;
+  private readonly presetRoleName = signal('');
 
   constructor() {
     this.userForm = this.fb.nonNullable.group({
-      // Backend: requerido, string, sin longitud minima declarada
       nombre: ['', [Validators.required]],
-      // Backend: requerido y email valido
       email: ['', [Validators.required, Validators.email]],
-      // Backend: requerido y MongoId
+      organization: [''],
       rol: ['', Validators.required],
-      // Backend create: requerido y minimo 6
       password: ['', [Validators.required, Validators.minLength(6)]],
-      // Backend admin-change-password: opcional en edicion, minimo 6 si se usa
       adminPassword: ['', [Validators.minLength(6)]],
     });
   }
 
-  // ==========================================
-  // [ PERMISOS ] - NO APLICA EN ESTE COMPONENTE
-  // ==========================================
-
-  // ==========================================
-  // [ STREAM REACTIVO ] - CARGA INICIAL SEGUN RUTA
-  // ==========================================
   ngOnInit(): void {
     this.loadRoles();
+    if (this.isSuperAdmin()) {
+      this.loadOrganizations();
+      this.userForm.controls.organization.valueChanges.subscribe(() => {
+        const selectedRoleId = this.userForm.controls.rol.value;
+        const stillAvailable = this.availableRoles().some((role) => role._id === selectedRoleId);
+
+        if (!stillAvailable) {
+          this.userForm.controls.rol.setValue('');
+        }
+
+        this.applyPresetRoleIfPossible();
+      });
+    }
+
+    this.route.queryParamMap.subscribe((params) => {
+      const organizationId = params.get('organization') ?? '';
+      const presetRole = params.get('presetRole') ?? '';
+
+      if (organizationId && this.isSuperAdmin() && !this.userId) {
+        this.userForm.controls.organization.setValue(organizationId);
+      }
+
+      this.presetRoleName.set(presetRole);
+      this.applyPresetRoleIfPossible();
+    });
 
     this.route.paramMap
       .pipe(
@@ -111,6 +125,7 @@ export class UserFormComponent implements OnInit {
           this.userForm.patchValue({
             nombre: user.nombre,
             email: user.email,
+            organization: user.organization?._id ?? '',
             rol: typeof user.rol === 'object' ? user.rol._id : user.rol,
           });
           this.loading.set(false);
@@ -122,9 +137,6 @@ export class UserFormComponent implements OnInit {
       });
   }
 
-  // ==========================================
-  // [ DATOS DERIVADOS ] - MENSAJES DE VALIDACION
-  // ==========================================
   protected getFieldError(field: keyof UserFormGroup['controls']): string | null {
     const control = this.userForm.controls[field];
 
@@ -170,19 +182,40 @@ export class UserFormComponent implements OnInit {
     return control.touched && control.invalid;
   }
 
+  protected organizationFieldHasError(): boolean {
+    const control = this.userForm.controls.organization;
+    return this.isSuperAdmin() && control.touched && !control.value;
+  }
+
   protected passwordHint(): string {
-    return this.isEditMode()
-      ? 'La contrasena no se edita desde este formulario.'
-      : '';
+    return this.isEditMode() ? 'La contrasena no se edita desde este formulario.' : '';
   }
 
   protected canAdminChangePassword(): boolean {
-    return this.currentUser()?.rol === 'Administrador';
+    return !!this.currentUser()?.esSuperAdmin;
   }
 
-  // ==========================================
-  // [ ACCIONES ] - EVENTOS DE UI
-  // ==========================================
+  protected isSuperAdmin(): boolean {
+    return !!this.currentUser()?.esSuperAdmin;
+  }
+
+  protected availableRoles(): Role[] {
+    if (!this.isSuperAdmin()) {
+      return this.roles();
+    }
+
+    const organizationId = this.userForm.controls.organization.value;
+    if (!organizationId) {
+      return [];
+    }
+
+    return this.roles().filter((role) => role.organization?._id === organizationId);
+  }
+
+  protected canSelectRole(): boolean {
+    return !this.isSuperAdmin() || !!this.userForm.controls.organization.value;
+  }
+
   setupEditMode(): void {
     this.userForm.controls.password.reset('');
     this.userForm.controls.password.clearValidators();
@@ -192,7 +225,17 @@ export class UserFormComponent implements OnInit {
   }
 
   loadRoles(): void {
-    this.rolesService.getRoles().subscribe((roles: Role[]) => this.roles.set(roles));
+    this.rolesService.getRoles().subscribe((roles: Role[]) => {
+      this.roles.set(roles);
+      this.applyPresetRoleIfPossible();
+    });
+  }
+
+  loadOrganizations(): void {
+    this.organizationsService.getOrganizations().subscribe((organizations) => {
+      this.organizations.set(organizations);
+      this.applyPresetRoleIfPossible();
+    });
   }
 
   onSubmit(): void {
@@ -204,6 +247,13 @@ export class UserFormComponent implements OnInit {
     this.loading.set(true);
 
     const rawValue = this.userForm.getRawValue();
+    if (this.isSuperAdmin() && !rawValue.organization) {
+      this.userForm.controls.organization.markAsTouched();
+      this.userForm.controls.rol.markAsTouched();
+      this.loading.set(false);
+      return;
+    }
+
     const operation: Observable<unknown> = this.isEditMode()
       ? this.usersService
           .updateUser(this.userId!, {
@@ -226,6 +276,7 @@ export class UserFormComponent implements OnInit {
           email: rawValue.email,
           rol: rawValue.rol,
           password: rawValue.password,
+          organization: this.isSuperAdmin() ? rawValue.organization : undefined,
         });
 
     operation.pipe(finalize(() => this.loading.set(false))).subscribe({
@@ -248,7 +299,22 @@ export class UserFormComponent implements OnInit {
     });
   }
 
-  // ==========================================
-  // [ PRIVADO ] - HELPERS INTERNOS
-  // ==========================================
+  private applyPresetRoleIfPossible(): void {
+    if (this.isEditMode()) {
+      return;
+    }
+
+    const presetRole = this.presetRoleName().trim().toLowerCase();
+    if (!presetRole) {
+      return;
+    }
+
+    const selectedRole = this.availableRoles().find(
+      (role) => role.nombre.trim().toLowerCase() === presetRole,
+    );
+
+    if (selectedRole) {
+      this.userForm.controls.rol.setValue(selectedRole._id);
+    }
+  }
 }

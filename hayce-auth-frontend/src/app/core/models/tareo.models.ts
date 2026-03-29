@@ -1,4 +1,5 @@
 import { AppActivityItem } from './activity.models';
+import { OrganizationItem } from './organization.models';
 import { AppStationItem } from './station.models';
 import { AppUserItem } from './user.models';
 import { AppWorkerItem } from './worker.models';
@@ -39,6 +40,7 @@ export interface AppTareoItem {
   estado: boolean;
   createdAt?: string;
   updatedAt?: string;
+  organization?: OrganizationItem | null;
 }
 
 // ==========================================

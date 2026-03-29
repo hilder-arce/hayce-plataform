@@ -3,6 +3,7 @@ import {
   IsEmail,
   IsMongoId,
   IsNotEmpty,
+  IsOptional,
   IsString,
   MinLength,
 } from 'class-validator';
@@ -28,4 +29,9 @@ export class CreateUserDto {
   @IsNotEmpty()
   @Field()
   rol: string;
+
+  @IsMongoId()
+  @IsOptional()
+  @Field({ nullable: true })
+  organization?: string;
 }

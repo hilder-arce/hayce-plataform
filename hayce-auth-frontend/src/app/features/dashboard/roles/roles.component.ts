@@ -44,7 +44,10 @@ export class RolesComponent {
   protected readonly loading = signal(true);
   protected readonly showInactive = signal(false);
   protected readonly searchTerm = signal('');
+  protected readonly organizationFilter = signal('');
   protected readonly pendingId = signal<string | null>(null);
+  protected readonly currentPage = signal(1);
+  protected readonly pageSize = 10;
 
   // ==========================================
   // [ PERMISOS ] - CONTROL DE ACCESO
@@ -61,20 +64,48 @@ export class RolesComponent {
   // ==========================================
   // [ DATOS DERIVADOS ] - FILTROS DE VISTA
   // ==========================================
+  protected readonly organizationOptions = computed(() => {
+    const organizations = new Map<string, string>();
+
+    this.roles().forEach((role) => {
+      if (role.organization?._id) {
+        organizations.set(role.organization._id, role.organization.nombre);
+      }
+    });
+
+    return [...organizations.entries()]
+      .map(([id, nombre]) => ({ id, nombre }))
+      .sort((a, b) => a.nombre.localeCompare(b.nombre));
+  });
+
   protected readonly filteredRoles = computed(() => {
     const term = this.searchTerm().trim().toLowerCase();
-    if (!term) {
-      return this.roles();
-    }
+    const selectedOrganizationId = this.organizationFilter();
 
     return this.roles().filter((role) => {
+      const organizationName = role.organization?.nombre?.toLowerCase() ?? '';
       const permissionsText = role.permisos.map((permission) => permission.nombre).join(' ').toLowerCase();
-      return (
+      const matchesSearch = !term || (
         role.nombre.toLowerCase().includes(term) ||
         (role.descripcion ?? '').toLowerCase().includes(term) ||
+        organizationName.includes(term) ||
         permissionsText.includes(term)
       );
+
+      const matchesOrganization =
+        !selectedOrganizationId || role.organization?._id === selectedOrganizationId;
+
+      return matchesSearch && matchesOrganization;
     });
+  });
+
+  protected readonly totalPages = computed(
+    () => Math.ceil(this.filteredRoles().length / this.pageSize) || 1,
+  );
+
+  protected readonly paginatedRoles = computed(() => {
+    const start = (this.currentPage() - 1) * this.pageSize;
+    return this.filteredRoles().slice(start, start + this.pageSize);
   });
 
   // ==========================================
@@ -97,11 +128,22 @@ export class RolesComponent {
 
   protected onSearch(term: string): void {
     this.searchTerm.set(term);
+    this.currentPage.set(1);
+  }
+
+  protected onOrganizationFilterChange(organizationId: string): void {
+    this.organizationFilter.set(organizationId);
+    this.currentPage.set(1);
   }
 
   protected onToggleInactive(): void {
     this.showInactive.update((value) => !value);
+    this.currentPage.set(1);
     this.loadRoles();
+  }
+
+  protected changePage(page: number): void {
+    this.currentPage.set(page);
   }
 
   protected confirmDelete(role: Role): void {
@@ -145,5 +187,9 @@ export class RolesComponent {
     }
 
     return role.permisos.slice(0, 3).map((permission) => permission.nombre).join(', ');
+  }
+
+  protected getOrganizationName(role: Role): string {
+    return role.organization?.nombre ?? 'Sistema';
   }
 }

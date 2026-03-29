@@ -1,4 +1,5 @@
 import { Args, Mutation, Query, Resolver } from '@nestjs/graphql';
+import { CurrentUser } from 'src/common/graphql/decorators/current-user.decorator';
 import { RequirePermission } from 'src/decorators/require-permission.decorator';
 import { CreateModuleDto } from './dto/create-module.dto';
 import { UpdateModuleDto } from './dto/update-module.dto';
@@ -11,8 +12,11 @@ export class ModulesResolver {
 
   @Mutation(() => Module)
   @RequirePermission('crear_modulo')
-  createModule(@Args('input') input: CreateModuleDto) {
-    return this.modulesService.create(input);
+  createModule(
+    @Args('input') input: CreateModuleDto,
+    @CurrentUser() user: { sub: string; esSuperAdmin?: boolean },
+  ) {
+    return this.modulesService.create(input, user);
   }
 
   @Query(() => [Module])
@@ -41,19 +45,29 @@ export class ModulesResolver {
 
   @Mutation(() => Module)
   @RequirePermission('actualizar_modulo')
-  updateModule(@Args('id') id: string, @Args('input') input: UpdateModuleDto) {
-    return this.modulesService.update(id, input);
+  updateModule(
+    @Args('id') id: string,
+    @Args('input') input: UpdateModuleDto,
+    @CurrentUser() user: { sub: string; esSuperAdmin?: boolean },
+  ) {
+    return this.modulesService.update(id, input, user);
   }
 
   @Mutation(() => Module)
   @RequirePermission('eliminar_modulo')
-  removeModule(@Args('id') id: string) {
-    return this.modulesService.remove(id);
+  removeModule(
+    @Args('id') id: string,
+    @CurrentUser() user: { sub: string; esSuperAdmin?: boolean },
+  ) {
+    return this.modulesService.remove(id, user);
   }
 
   @Mutation(() => Module)
   @RequirePermission('eliminar_modulo')
-  restoreModule(@Args('id') id: string) {
-    return this.modulesService.restore(id);
+  restoreModule(
+    @Args('id') id: string,
+    @CurrentUser() user: { sub: string; esSuperAdmin?: boolean },
+  ) {
+    return this.modulesService.restore(id, user);
   }
 }

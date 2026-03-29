@@ -11,9 +11,6 @@ import { GraphqlApiService } from './graphql-api.service';
 export class RolesService {
   private readonly graphql = inject(GraphqlApiService);
 
-  // ==========================================
-  // [ GET ] - LISTAR ROLES ACTIVOS O INACTIVOS
-  // ==========================================
   getRoles(includeInactive = false): Observable<Role[]> {
     const operation = includeInactive ? 'inactiveRoles' : 'roles';
     return this.graphql
@@ -27,6 +24,22 @@ export class RolesService {
               estado
               createdAt
               updatedAt
+              organization {
+                id
+                nombre
+                slug
+                estado
+              }
+              createdBy {
+                id
+                nombre
+                email
+              }
+              ownerAdmin {
+                id
+                nombre
+                email
+              }
               permisos {
                 id
                 nombre
@@ -44,9 +57,6 @@ export class RolesService {
       .pipe(map((response) => (response[operation] ?? []).map((role) => this.mapRole(role))));
   }
 
-  // ==========================================
-  // [ GET ] - OBTENER UN ROL POR ID
-  // ==========================================
   getRoleById(id: string, inactive = false): Observable<Role> {
     const operation = inactive ? 'inactiveRole' : 'role';
     return this.graphql
@@ -60,6 +70,22 @@ export class RolesService {
               estado
               createdAt
               updatedAt
+              organization {
+                id
+                nombre
+                slug
+                estado
+              }
+              createdBy {
+                id
+                nombre
+                email
+              }
+              ownerAdmin {
+                id
+                nombre
+                email
+              }
               permisos {
                 id
                 nombre
@@ -78,9 +104,6 @@ export class RolesService {
       .pipe(map((response) => this.mapRole((response[operation] as RoleGraphql)!)));
   }
 
-  // ==========================================
-  // [ POST ] - CREAR UN NUEVO ROL
-  // ==========================================
   createRole(payload: CreateRolePayload): Observable<Role> {
     return this.graphql
       .mutate<{ createRole: RoleGraphql }>(
@@ -93,6 +116,22 @@ export class RolesService {
               estado
               createdAt
               updatedAt
+              organization {
+                id
+                nombre
+                slug
+                estado
+              }
+              createdBy {
+                id
+                nombre
+                email
+              }
+              ownerAdmin {
+                id
+                nombre
+                email
+              }
               permisos {
                 id
                 nombre
@@ -111,9 +150,6 @@ export class RolesService {
       .pipe(map((response) => this.mapRole(response.createRole)));
   }
 
-  // ==========================================
-  // [ PATCH ] - ACTUALIZAR UN ROL
-  // ==========================================
   updateRole(id: string, payload: UpdateRolePayload): Observable<Role> {
     return this.graphql
       .mutate<{ updateRole: RoleGraphql }>(
@@ -126,6 +162,22 @@ export class RolesService {
               estado
               createdAt
               updatedAt
+              organization {
+                id
+                nombre
+                slug
+                estado
+              }
+              createdBy {
+                id
+                nombre
+                email
+              }
+              ownerAdmin {
+                id
+                nombre
+                email
+              }
               permisos {
                 id
                 nombre
@@ -144,9 +196,6 @@ export class RolesService {
       .pipe(map((response) => this.mapRole(response.updateRole)));
   }
 
-  // ==========================================
-  // [ DELETE ] - DESACTIVAR UN ROL
-  // ==========================================
   deleteRole(id: string): Observable<Role> {
     return this.graphql
       .mutate<{ removeRole: RoleGraphql }>(
@@ -159,6 +208,22 @@ export class RolesService {
               estado
               createdAt
               updatedAt
+              organization {
+                id
+                nombre
+                slug
+                estado
+              }
+              createdBy {
+                id
+                nombre
+                email
+              }
+              ownerAdmin {
+                id
+                nombre
+                email
+              }
               permisos {
                 id
                 nombre
@@ -177,9 +242,6 @@ export class RolesService {
       .pipe(map((response) => this.mapRole(response.removeRole)));
   }
 
-  // ==========================================
-  // [ PATCH ] - RESTAURAR UN ROL INACTIVO
-  // ==========================================
   restoreRole(id: string): Observable<Role> {
     return this.graphql
       .mutate<{ restoreRole: RoleGraphql }>(
@@ -192,6 +254,22 @@ export class RolesService {
               estado
               createdAt
               updatedAt
+              organization {
+                id
+                nombre
+                slug
+                estado
+              }
+              createdBy {
+                id
+                nombre
+                email
+              }
+              ownerAdmin {
+                id
+                nombre
+                email
+              }
               permisos {
                 id
                 nombre
@@ -218,6 +296,28 @@ export class RolesService {
       estado: role.estado,
       createdAt: role.createdAt,
       updatedAt: role.updatedAt,
+      organization: role.organization
+        ? {
+            _id: role.organization.id,
+            nombre: role.organization.nombre,
+            slug: role.organization.slug,
+            estado: role.organization.estado,
+          }
+        : null,
+      createdBy: role.createdBy
+        ? {
+            _id: role.createdBy.id,
+            nombre: role.createdBy.nombre,
+            email: role.createdBy.email,
+          }
+        : null,
+      ownerAdmin: role.ownerAdmin
+        ? {
+            _id: role.ownerAdmin.id,
+            nombre: role.ownerAdmin.nombre,
+            email: role.ownerAdmin.email,
+          }
+        : null,
       permisos: (role.permisos ?? []).map((permission) => ({
         _id: permission.id,
         nombre: permission.nombre,
@@ -238,6 +338,22 @@ interface RoleGraphql {
   estado: boolean;
   createdAt?: string;
   updatedAt?: string;
+  organization?: {
+    id: string;
+    nombre: string;
+    slug: string;
+    estado: boolean;
+  } | null;
+  createdBy?: {
+    id: string;
+    nombre: string;
+    email?: string;
+  } | null;
+  ownerAdmin?: {
+    id: string;
+    nombre: string;
+    email?: string;
+  } | null;
   permisos?: Array<{
     id: string;
     nombre: string;

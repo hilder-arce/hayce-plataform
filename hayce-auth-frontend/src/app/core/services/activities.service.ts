@@ -15,9 +15,6 @@ import { GraphqlApiService } from './graphql-api.service';
 export class ActivitiesService {
   private readonly graphql = inject(GraphqlApiService);
 
-  // ==========================================
-  // [ GET ] - LISTADO DE ACTIVIDADES ACTIVAS O INACTIVAS
-  // ==========================================
   getActivities(includeInactive = false): Observable<AppActivityItem[]> {
     const operation = includeInactive ? 'inactiveActivities' : 'activities';
     return this.graphql
@@ -31,20 +28,38 @@ export class ActivitiesService {
               estado
               createdAt
               updatedAt
+              organization {
+                id
+                nombre
+                slug
+                estado
+              }
+              createdBy {
+                id
+                nombre
+                email
+              }
               estacion {
                 id
                 nombre
+                organization {
+                  id
+                  nombre
+                  slug
+                  estado
+                }
               }
             }
           }
         `,
       )
-      .pipe(map((response) => (response[operation] ?? []).map((activity) => this.mapActivity(activity))));
+      .pipe(
+        map((response) =>
+          (response[operation] ?? []).map((activity) => this.mapActivity(activity)),
+        ),
+      );
   }
 
-  // ==========================================
-  // [ GET ] - OBTENER UNA ACTIVIDAD POR IDENTIFICADOR
-  // ==========================================
   getActivityById(id: string, inactive = false): Observable<AppActivityItem> {
     const operation = inactive ? 'inactiveActivity' : 'activity';
     return this.graphql
@@ -58,21 +73,39 @@ export class ActivitiesService {
               estado
               createdAt
               updatedAt
+              organization {
+                id
+                nombre
+                slug
+                estado
+              }
+              createdBy {
+                id
+                nombre
+                email
+              }
               estacion {
                 id
                 nombre
+                organization {
+                  id
+                  nombre
+                  slug
+                  estado
+                }
               }
             }
           }
         `,
         { id },
       )
-      .pipe(map((response) => this.mapActivity((response[operation] as ActivityGraphql)!)));
+      .pipe(
+        map((response) =>
+          this.mapActivity((response[operation] as ActivityGraphql)!),
+        ),
+      );
   }
 
-  // ==========================================
-  // [ POST ] - CREAR UNA NUEVA ACTIVIDAD
-  // ==========================================
   createActivity(payload: CreateActivityPayload): Observable<AppActivityItem> {
     return this.graphql
       .mutate<{ createActivity: ActivityGraphql }>(
@@ -83,9 +116,28 @@ export class ActivitiesService {
               nombre
               descripcion
               estado
+              createdAt
+              updatedAt
+              organization {
+                id
+                nombre
+                slug
+                estado
+              }
+              createdBy {
+                id
+                nombre
+                email
+              }
               estacion {
                 id
                 nombre
+                organization {
+                  id
+                  nombre
+                  slug
+                  estado
+                }
               }
             }
           }
@@ -95,10 +147,10 @@ export class ActivitiesService {
       .pipe(map((response) => this.mapActivity(response.createActivity)));
   }
 
-  // ==========================================
-  // [ PATCH ] - ACTUALIZAR UNA ACTIVIDAD EXISTENTE
-  // ==========================================
-  updateActivity(id: string, payload: UpdateActivityPayload): Observable<AppActivityItem> {
+  updateActivity(
+    id: string,
+    payload: UpdateActivityPayload,
+  ): Observable<AppActivityItem> {
     return this.graphql
       .mutate<{ updateActivity: ActivityGraphql }>(
         `
@@ -108,9 +160,28 @@ export class ActivitiesService {
               nombre
               descripcion
               estado
+              createdAt
+              updatedAt
+              organization {
+                id
+                nombre
+                slug
+                estado
+              }
+              createdBy {
+                id
+                nombre
+                email
+              }
               estacion {
                 id
                 nombre
+                organization {
+                  id
+                  nombre
+                  slug
+                  estado
+                }
               }
             }
           }
@@ -120,9 +191,6 @@ export class ActivitiesService {
       .pipe(map((response) => this.mapActivity(response.updateActivity)));
   }
 
-  // ==========================================
-  // [ DELETE ] - DESACTIVAR UNA ACTIVIDAD
-  // ==========================================
   deleteActivity(id: string): Observable<AppActivityItem> {
     return this.graphql
       .mutate<{ removeActivity: ActivityGraphql }>(
@@ -130,7 +198,32 @@ export class ActivitiesService {
           mutation RemoveActivity($id: String!) {
             removeActivity(id: $id) {
               id
+              nombre
+              descripcion
               estado
+              createdAt
+              updatedAt
+              organization {
+                id
+                nombre
+                slug
+                estado
+              }
+              createdBy {
+                id
+                nombre
+                email
+              }
+              estacion {
+                id
+                nombre
+                organization {
+                  id
+                  nombre
+                  slug
+                  estado
+                }
+              }
             }
           }
         `,
@@ -139,9 +232,6 @@ export class ActivitiesService {
       .pipe(map((response) => this.mapActivity(response.removeActivity)));
   }
 
-  // ==========================================
-  // [ PATCH ] - RESTAURAR UNA ACTIVIDAD INACTIVA
-  // ==========================================
   restoreActivity(id: string): Observable<AppActivityItem> {
     return this.graphql
       .mutate<{ restoreActivity: ActivityGraphql }>(
@@ -149,7 +239,32 @@ export class ActivitiesService {
           mutation RestoreActivity($id: String!) {
             restoreActivity(id: $id) {
               id
+              nombre
+              descripcion
               estado
+              createdAt
+              updatedAt
+              organization {
+                id
+                nombre
+                slug
+                estado
+              }
+              createdBy {
+                id
+                nombre
+                email
+              }
+              estacion {
+                id
+                nombre
+                organization {
+                  id
+                  nombre
+                  slug
+                  estado
+                }
+              }
             }
           }
         `,
@@ -166,9 +281,32 @@ export class ActivitiesService {
       estado: activity.estado,
       createdAt: activity.createdAt,
       updatedAt: activity.updatedAt,
+      organization: activity.organization
+        ? {
+            _id: activity.organization.id,
+            nombre: activity.organization.nombre,
+            slug: activity.organization.slug,
+            estado: activity.organization.estado,
+          }
+        : null,
+      createdBy: activity.createdBy
+        ? {
+            _id: activity.createdBy.id,
+            nombre: activity.createdBy.nombre,
+            email: activity.createdBy.email,
+          }
+        : null,
       estacion: {
         _id: activity.estacion?.id,
         nombre: activity.estacion?.nombre,
+        organization: activity.estacion?.organization
+          ? {
+              _id: activity.estacion.organization.id,
+              nombre: activity.estacion.organization.nombre,
+              slug: activity.estacion.organization.slug,
+              estado: activity.estacion.organization.estado,
+            }
+          : null,
       },
     };
   }
@@ -181,8 +319,25 @@ interface ActivityGraphql {
   estado: boolean;
   createdAt?: string;
   updatedAt?: string;
+  organization?: {
+    id: string;
+    nombre: string;
+    slug: string;
+    estado: boolean;
+  } | null;
+  createdBy?: {
+    id: string;
+    nombre: string;
+    email?: string;
+  } | null;
   estacion?: {
     id: string;
     nombre: string;
+    organization?: {
+      id: string;
+      nombre: string;
+      slug: string;
+      estado: boolean;
+    } | null;
   };
 }

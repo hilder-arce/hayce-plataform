@@ -1,5 +1,5 @@
 import { Field, InputType } from "@nestjs/graphql";
-import { IsEmail, IsNotEmpty, IsOptional, IsString, ValidateIf } from "class-validator";
+import { IsEmail, IsMongoId, IsNotEmpty, IsOptional, IsString, ValidateIf } from "class-validator";
 
 @InputType()
 export class CreateWorkerDto {
@@ -25,4 +25,9 @@ export class CreateWorkerDto {
     @ValidateIf((o) => o.correo !== '' && o.correo !== null)
     @Field({ nullable: true })
     correo?: string;
+
+    @IsMongoId()
+    @IsOptional()
+    @Field({ nullable: true })
+    organization?: string;
 }

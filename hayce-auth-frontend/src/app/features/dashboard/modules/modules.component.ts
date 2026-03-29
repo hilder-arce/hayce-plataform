@@ -46,6 +46,8 @@ export class ModulesComponent implements OnInit {
   protected readonly showInactive = signal(false);
   protected readonly searchTerm = signal('');
   protected readonly modulePendingId = signal<string | null>(null);
+  protected readonly currentPage = signal(1);
+  protected readonly pageSize = 10;
 
   // ==========================================
   // [ PERMISOS ] - CAPACIDADES DISPONIBLES
@@ -74,6 +76,15 @@ export class ModulesComponent implements OnInit {
     );
   });
 
+  protected readonly totalPages = computed(
+    () => Math.ceil(this.filteredModules().length / this.pageSize) || 1,
+  );
+
+  protected readonly paginatedModules = computed(() => {
+    const start = (this.currentPage() - 1) * this.pageSize;
+    return this.filteredModules().slice(start, start + this.pageSize);
+  });
+
   ngOnInit(): void {
     this.loadModules();
   }
@@ -94,11 +105,17 @@ export class ModulesComponent implements OnInit {
 
   protected onSearch(term: string): void {
     this.searchTerm.set(term);
+    this.currentPage.set(1);
   }
 
   protected onToggleInactive(): void {
     this.showInactive.update((value) => !value);
+    this.currentPage.set(1);
     this.loadModules();
+  }
+
+  protected changePage(page: number): void {
+    this.currentPage.set(page);
   }
 
   protected confirmDelete(module: AppModuleItem): void {

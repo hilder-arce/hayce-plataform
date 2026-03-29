@@ -1,13 +1,26 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 
 import { ActivitiesService } from 'src/activities/activities.service';
+import { Organization } from 'src/organizations/entities/organization.entity';
 import { NotificationsService } from 'src/notifications/notifications.service';
 import { WorkersService } from 'src/workers/workers.service';
 import { CreateTareoDto } from './dto/create-tareo.dto';
 import { UpdateTareoDto } from './dto/update-tareo.dto';
 import { EstadoTareo, Tareo } from './entities/tareo.entity';
+import path from 'path';
+
+type ActorContext = {
+  sub: string;
+  organizationId?: string | null;
+  esSuperAdmin?: boolean;
+};
 
 @Injectable()
 export class TareoService {
@@ -18,9 +31,6 @@ export class TareoService {
     private readonly workersService: WorkersService,
   ) {}
 
-  // ======================================================
-  // [ HELPERS ] - CALCULO, VALIDACION Y CICLO DE VIDA
-  // ======================================================
   private calculateHours(horaIni: Date, horaFin?: Date): number {
     if (!horaFin) return 0;
 
@@ -54,23 +64,10 @@ export class TareoService {
     const fin = this.buildScheduleDate(fecha, horaFin);
 
     if (inicio.getTime() > fin.getTime()) {
-      throw new BadRequestException('La hora de inicio no puede ser mayor que la hora final.');
+      throw new BadRequestException(
+        'La hora de inicio no puede ser mayor que la hora final.',
+      );
     }
-  }
-
-  private async resolveStationName(activityId: string, requestedStationName: string): Promise<string> {
-    const activity = await this.activitiesService.findOne(activityId);
-    const stationName = (activity.estacion as any)?.nombre;
-
-    if (!stationName) {
-      throw new BadRequestException('La actividad seleccionada no tiene una estacion valida.');
-    }
-
-    if (requestedStationName.trim().toLowerCase() !== stationName.trim().toLowerCase()) {
-      throw new BadRequestException('La actividad seleccionada no pertenece a la estacion indicada.');
-    }
-
-    return stationName;
   }
 
   private extractId(reference: unknown): string {
@@ -82,23 +79,70 @@ export class TareoService {
       return reference;
     }
 
+    if (reference instanceof Types.ObjectId) {
+      return reference.toString();
+    }
+
     if (typeof reference === 'object' && reference !== null) {
-      const maybeId = (reference as { id?: string; _id?: { toString?: () => string } | string }).id;
+      const maybeId = (reference as { id?: string; _id?: unknown }).id;
       if (typeof maybeId === 'string') {
         return maybeId;
       }
 
-      const maybeMongoId = (reference as { _id?: { toString?: () => string } | string })._id;
+      const maybeMongoId = (reference as { _id?: unknown })._id;
       if (typeof maybeMongoId === 'string') {
         return maybeMongoId;
       }
 
-      if (maybeMongoId && typeof maybeMongoId === 'object' && typeof maybeMongoId.toString === 'function') {
+      if (maybeMongoId instanceof Types.ObjectId) {
         return maybeMongoId.toString();
+      }
+
+      if (
+        maybeMongoId &&
+        typeof maybeMongoId === 'object' &&
+        typeof (maybeMongoId as { toString?: () => string }).toString === 'function'
+      ) {
+        return (maybeMongoId as { toString: () => string }).toString();
       }
     }
 
     return '';
+  }
+
+  private async resolveStationName(
+    activityId: string,
+    requestedStationName: string,
+    actor: ActorContext,
+  ): Promise<{
+    stationName: string;
+    organizationId: string;
+    activityOrganizationId: string;
+  }> {
+    const activity = await this.activitiesService.findOne(activityId, actor);
+    const stationName = (activity.estacion as any)?.nombre;
+    const organizationId = this.extractId(activity.organization);
+
+    if (!stationName) {
+      throw new BadRequestException(
+        'La actividad seleccionada no tiene una estacion valida.',
+      );
+    }
+
+    if (
+      requestedStationName.trim().toLowerCase() !==
+      stationName.trim().toLowerCase()
+    ) {
+      throw new BadRequestException(
+        'La actividad seleccionada no pertenece a la estacion indicada.',
+      );
+    }
+
+    return {
+      stationName,
+      organizationId,
+      activityOrganizationId: organizationId,
+    };
   }
 
   private async notifyStartReminder(tareo: Tareo): Promise<void> {
@@ -124,7 +168,9 @@ export class TareoService {
   private async applyLifecycleRules(tareo: Tareo): Promise<Tareo> {
     const now = new Date();
     const inicioProgramado = this.buildScheduleDate(tareo.fecha, tareo.hora_ini);
-    const finProgramado = tareo.hora_fin ? this.buildScheduleDate(tareo.fecha, tareo.hora_fin) : null;
+    const finProgramado = tareo.hora_fin
+      ? this.buildScheduleDate(tareo.fecha, tareo.hora_fin)
+      : null;
     let changed = false;
 
     if (
@@ -153,13 +199,23 @@ export class TareoService {
     return tareo;
   }
 
-  private async populateTareo(id: string): Promise<Tareo> {
-    const tareo = await this.tareoModel.findById(id)
-      .populate('trabajador')
+  private async populateTareo(id: string, actor: ActorContext): Promise<Tareo> {
+    const tareo = await this.tareoModel
+      .findById(id)
+      .populate({
+        path: 'trabajador',
+        populate: { path: 'organization' },
+      })
       .populate('creado_por')
+      .populate('organization')
       .populate({
         path: 'actividad',
-        populate: { path: 'estacion' },
+        populate: [
+          {
+            path: 'organization',
+          },
+          { path: 'estacion', populate: { path: 'organization' } }
+        ],
       })
       .select('-__v')
       .exec();
@@ -168,63 +224,107 @@ export class TareoService {
       throw new NotFoundException(`Tareo con ID "${id}" no encontrado`);
     }
 
+    this.ensureAccess(actor, tareo.organization);
+
     return this.applyLifecycleRules(tareo);
   }
 
-  // ======================================================
-  // [ CREATE ] - REGISTRO DE NUEVO TAREO
-  // ======================================================
-  async create(createTareoDto: CreateTareoDto, creadoPorId: string): Promise<Tareo> {
-    await this.workersService.findOne(createTareoDto.trabajador);
-    this.validateTimeRange(createTareoDto.fecha, createTareoDto.hora_ini, createTareoDto.hora_fin);
+  async create(
+    createTareoDto: CreateTareoDto,
+    actor: ActorContext,
+  ): Promise<Tareo> {
+    const worker = await this.workersService.findOne(
+      createTareoDto.trabajador,
+      actor,
+    );
+    this.validateTimeRange(
+      createTareoDto.fecha,
+      createTareoDto.hora_ini,
+      createTareoDto.hora_fin,
+    );
 
-    const stationName = await this.resolveStationName(createTareoDto.actividad, createTareoDto.estacion);
-    const horas = this.calculateHours(createTareoDto.hora_ini, createTareoDto.hora_fin);
+    const { stationName, organizationId } = await this.resolveStationName(
+      createTareoDto.actividad,
+      createTareoDto.estacion,
+      actor,
+    );
+
+    const workerOrganizationId = this.extractId(worker.organization);
+    if (workerOrganizationId !== organizationId) {
+      throw new ForbiddenException(
+        'El trabajador y la actividad deben pertenecer a la misma organizacion',
+      );
+    }
+
+    const horas = this.calculateHours(
+      createTareoDto.hora_ini,
+      createTareoDto.hora_fin,
+    );
 
     const newTareo = new this.tareoModel({
       ...createTareoDto,
       estacion: stationName,
-      creado_por: new Types.ObjectId(creadoPorId),
+      creado_por: new Types.ObjectId(actor.sub),
+      organization: new Types.ObjectId(organizationId),
       horas,
     });
 
     const saved = await newTareo.save();
-    return this.populateTareo(saved._id.toString());
+    return this.populateTareo(saved._id.toString(), actor);
   }
 
-  // ======================================================
-  // [ READ ] - LISTADO DE TAREOS ACTIVOS
-  // ======================================================
-  async findAll(): Promise<Tareo[]> {
-    const tareos = await this.tareoModel.find({ estado: true })
-      .populate('trabajador')
+  async findAll(actor: ActorContext): Promise<Tareo[]> {
+    if (!actor.esSuperAdmin && !actor.organizationId) {
+      throw new ForbiddenException(
+        'Tu usuario no tiene una organizacion asignada',
+      );
+    }
+
+    const query = actor.esSuperAdmin
+      ? { estado: true }
+      : {
+          estado: true,
+          organization: new Types.ObjectId(actor.organizationId as string),
+        };
+
+    const tareos = await this.tareoModel
+      .find(query)
+      .populate({
+        path: 'trabajador',
+        populate: { path: 'organization' },
+      })
       .populate('creado_por')
+      .populate('organization')
       .populate({
         path: 'actividad',
-        populate: { path: 'estacion' },
-      })
+          populate: [
+            {
+              path: 'organization',
+            },
+            { path: 'estacion', populate: { path: 'organization' } }
+          ],
+        })
       .select('-__v')
+      .sort({ createdAt: -1 })
       .exec();
 
     return Promise.all(tareos.map((tareo) => this.applyLifecycleRules(tareo)));
   }
 
-  // ======================================================
-  // [ READ ] - BUSQUEDA DE TAREO POR ID
-  // ======================================================
-  async findOne(id: string): Promise<Tareo> {
-    return this.populateTareo(id);
+  async findOne(id: string, actor: ActorContext): Promise<Tareo> {
+    return this.populateTareo(id, actor);
   }
 
-  // ======================================================
-  // [ UPDATE ] - ACTUALIZACION DE TAREO
-  // ======================================================
-  async update(id: string, updateTareoDto: UpdateTareoDto): Promise<Tareo> {
-    const current = await this.findOne(id);
+  async update(
+    id: string,
+    updateTareoDto: UpdateTareoDto,
+    actor: ActorContext,
+  ): Promise<Tareo> {
+    const current = await this.findOne(id, actor);
 
-    if (updateTareoDto.trabajador) {
-      await this.workersService.findOne(updateTareoDto.trabajador);
-    }
+    const worker = updateTareoDto.trabajador
+      ? await this.workersService.findOne(updateTareoDto.trabajador, actor)
+      : current.trabajador;
 
     const fecha = updateTareoDto.fecha || current.fecha;
     const horaIni = updateTareoDto.hora_ini || current.hora_ini;
@@ -233,10 +333,24 @@ export class TareoService {
     this.validateTimeRange(fecha, horaIni, horaFin);
 
     let stationName = current.estacion;
+    let organizationId = this.extractId(current.organization);
+
     if (updateTareoDto.actividad || updateTareoDto.estacion) {
-      stationName = await this.resolveStationName(
+      const resolved = await this.resolveStationName(
         updateTareoDto.actividad || this.extractId(current.actividad),
         updateTareoDto.estacion || current.estacion,
+        actor,
+      );
+      stationName = resolved.stationName;
+      organizationId = resolved.organizationId;
+    }
+
+    const workerOrganizationId = this.extractId(
+      (worker as any)?.organization ?? current.organization,
+    );
+    if (workerOrganizationId !== organizationId) {
+      throw new ForbiddenException(
+        'El trabajador y la actividad deben pertenecer a la misma organizacion',
       );
     }
 
@@ -248,41 +362,55 @@ export class TareoService {
       {
         ...updateTareoDto,
         estacion: stationName,
+        organization: new Types.ObjectId(organizationId),
         horas,
         recordatorio_inicio_enviado:
-          nextEstado === EstadoTareo.EN_DESARROLLO || nextEstado === EstadoTareo.FINALIZADO
+          nextEstado === EstadoTareo.EN_DESARROLLO ||
+          nextEstado === EstadoTareo.FINALIZADO
             ? true
             : current.recordatorio_inicio_enviado,
       },
       { returnDocument: 'after' },
-    ).exec();
+    );
 
-    return this.populateTareo(id);
+    return this.populateTareo(id, actor);
   }
 
-  // ======================================================
-  // [ DELETE ] - DESACTIVACION LOGICA
-  // ======================================================
-  async remove(id: string): Promise<Tareo> {
+  async remove(id: string, actor: ActorContext): Promise<Tareo> {
+    await this.findOne(id, actor);
     await this.tareoModel.findByIdAndUpdate(
       id,
       { estado: false },
       { returnDocument: 'after' },
-    ).exec();
+    );
 
-    return this.populateTareo(id);
+    return this.populateTareo(id, actor);
   }
 
-  // ======================================================
-  // [ RESTORE ] - REACTIVACION
-  // ======================================================
-  async restore(id: string): Promise<Tareo> {
+  async restore(id: string, actor: ActorContext): Promise<Tareo> {
+    await this.findOne(id, actor);
     await this.tareoModel.findByIdAndUpdate(
       id,
       { estado: true },
       { returnDocument: 'after' },
-    ).exec();
+    );
 
-    return this.populateTareo(id);
+    return this.populateTareo(id, actor);
+  }
+
+  private ensureAccess(
+    actor: ActorContext,
+    organization?: Types.ObjectId | Organization | null,
+  ): void {
+    if (actor.esSuperAdmin) {
+      return;
+    }
+
+    const organizationId = this.extractId(organization);
+    if (!actor.organizationId || !organizationId || actor.organizationId !== organizationId) {
+      throw new ForbiddenException(
+        'No puedes operar sobre tareos de otra organizacion',
+      );
+    }
   }
 }

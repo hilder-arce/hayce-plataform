@@ -1,3 +1,6 @@
+import { OrganizationItem } from './organization.models';
+import { AppUserSummary } from './user.models';
+
 // ==========================================
 // [ ENTIDAD PRINCIPAL ] - TRABAJADOR DEL SISTEMA
 // ==========================================
@@ -10,6 +13,8 @@ export interface AppWorkerItem {
   estado: boolean;
   createdAt?: string;
   updatedAt?: string;
+  organization?: OrganizationItem | null;
+  createdBy?: AppUserSummary | null;
 }
 
 // ==========================================
@@ -20,6 +25,7 @@ export interface CreateWorkerPayload {
   apellidos: string;
   numero_telefono?: string;
   correo?: string;
+  organization?: string;
 }
 
 export interface UpdateWorkerPayload {
@@ -27,4 +33,5 @@ export interface UpdateWorkerPayload {
   apellidos?: string;
   numero_telefono?: string;
   correo?: string;
+  organization?: string;
 }

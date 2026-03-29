@@ -4,7 +4,9 @@ import {
   extractEntityId,
   isPopulatedReference,
 } from 'src/common/graphql/utils/mongoose-ref.util';
+import { Organization } from 'src/organizations/entities/organization.entity';
 import { Permission } from 'src/permissions/entities/permission.entity';
+import { User } from 'src/users/entities/user.entity';
 import { Role } from './entities/role.entity';
 
 @Resolver(() => Role)
@@ -30,5 +32,37 @@ export class RoleResolver {
         (permission): permission is Permission => !!permission,
       ),
     );
+  }
+
+  @ResolveField(() => Organization, { nullable: true })
+  async organization(@Parent() role: Role) {
+    if (isPopulatedReference<Organization>(role.organization, 'nombre')) {
+      return role.organization;
+    }
+
+    const organizationId = extractEntityId(role.organization);
+    return organizationId
+      ? this.loaders.organizationById.load(organizationId)
+      : null;
+  }
+
+  @ResolveField(() => User, { nullable: true })
+  async createdBy(@Parent() role: Role) {
+    if (isPopulatedReference<User>(role.createdBy, 'nombre')) {
+      return role.createdBy;
+    }
+
+    const userId = extractEntityId(role.createdBy);
+    return userId ? this.loaders.userById.load(userId) : null;
+  }
+
+  @ResolveField(() => User, { nullable: true })
+  async ownerAdmin(@Parent() role: Role) {
+    if (isPopulatedReference<User>(role.ownerAdmin, 'nombre')) {
+      return role.ownerAdmin;
+    }
+
+    const userId = extractEntityId(role.ownerAdmin);
+    return userId ? this.loaders.userById.load(userId) : null;
   }
 }

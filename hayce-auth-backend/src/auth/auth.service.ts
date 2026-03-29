@@ -3,25 +3,23 @@ import {
   Injectable,
   NotFoundException,
   UnauthorizedException,
-  BadRequestException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { Model, Types } from 'mongoose';
 import * as bcrypt from 'bcrypt';
+import { Request, Response } from 'express';
 
+import { AccessActor, AccessControlService } from './authorization/access-control.service';
 import { LoginDto } from './dto/login.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { VerifyCodeDto } from './dto/verify-code.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
-
 import { Session } from './entities/session.entity';
 import { User } from 'src/users/entities/user.entity';
 import { PasswordReset } from './entities/password-reset.entity';
-
 import { NotificationsService } from 'src/notifications/notifications.service';
-import { Request, Response } from 'express';
 
 @Injectable()
 export class AuthService {
@@ -33,18 +31,12 @@ export class AuthService {
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
     private readonly notificationsService: NotificationsService,
+    private readonly accessControlService: AccessControlService,
   ) {}
 
-  // ======================================================
-  // [ AUTH ] - PROCESO DE AUTENTICACIÓN (LOGIN)
-  // ======================================================
   async login(loginDto: LoginDto, req: Request, res: Response) {
-    // 1. OBTENCIÓN Y VALIDACIÓN DE IDENTIDAD
-    const user = await this.findOneByEmail(loginDto.email);
-    const isPasswordValid = await bcrypt.compare(
-      loginDto.password,
-      user.password,
-    );
+    const user = await this.findOneByEmail(loginDto.email.trim().toLowerCase());
+    const isPasswordValid = await bcrypt.compare(loginDto.password, user.password);
 
     if (!isPasswordValid) {
       throw new UnauthorizedException(
@@ -52,13 +44,10 @@ export class AuthService {
       );
     }
 
-    // 2. CONFIGURACIÓN DE SESIÓN (7 DÍAS DE VIGENCIA)
     const expirationDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-    const device =
-      loginDto.dispositivo ?? req.headers['user-agent'] ?? 'Desconocido';
+    const device = loginDto.dispositivo ?? req.headers['user-agent'] ?? 'Desconocido';
     const location = loginDto.ubicacion ?? 'Desconocida';
 
-    // 3. REGISTRO DE SESIÓN EN BASE DE DATOS (PENDIENTE DE TOKEN)
     const session = await this.sessionModel.create({
       usuario: user._id,
       refreshToken: 'pending',
@@ -67,18 +56,14 @@ export class AuthService {
       expiraEn: expirationDate,
     });
 
-    // 4. GENERACIÓN DE CRIPTOGRAFÍA JWT
     const accessToken = this.generarAccessToken(user, session._id.toString());
     const refreshToken = this.generarRefreshToken(session._id.toString());
 
-    // 5. RESGUARDO SEGURO DEL REFRESH TOKEN (HASHING)
     session.refreshToken = await bcrypt.hash(refreshToken, 10);
     await session.save();
 
-    // 6. PERSISTENCIA DE TOKENS EN COOKIES SEGURAS
     this.setCookie(req, res, accessToken, refreshToken);
 
-    // 7. NOTIFICACIÓN DE SEGURIDAD POR INICIO DE SESIÓN
     await this.notificationsService.notificarLogin(
       user._id.toString(),
       user.nombre,
@@ -88,20 +73,15 @@ export class AuthService {
       location,
     );
 
-    const payload = {
+    return {
       status: 'success',
       message: 'Autenticación completada con éxito',
       data: {
-        usuario: this.formatearUsuario(user.toObject()),
+        usuario: this.formatearUsuario(user),
       },
     };
-
-    return payload;
   }
 
-  // ======================================================
-  // [ AUTH ] - CIERRE DE SESIÓN (LOGOUT)
-  // ======================================================
   async logout(req: Request, res: Response) {
     const refreshToken = req.cookies?.refresh_token;
 
@@ -110,25 +90,18 @@ export class AuthService {
         const payload = this.jwtService.verify(refreshToken, {
           secret: this.configService.get('JWT_REFRESH_SECRET'),
         });
-        await this.sessionModel.findByIdAndUpdate(payload.sub, {
-          estado: false,
-        });
-      } catch (error) {
-        // ERROR SILENCIADO: EL TOKEN PODRÍA ESTAR YA EXPIRADO
+        await this.sessionModel.findByIdAndUpdate(payload.sub, { estado: false });
+      } catch {
+        // El token puede estar expirado y no afecta el cierre local.
       }
 
       this.clearCookies(req, res);
-      const payload = { message: 'Sesión finalizada correctamente' };
-
-      return payload;
+      return { message: 'Sesión finalizada correctamente' };
     }
 
     return { message: 'No existe una sesión activa para cerrar' };
   }
 
-  // ======================================================
-  // [ AUTH ] - RENOVACIÓN DINÁMICA DE TOKENS (REFRESH)
-  // ======================================================
   async refreshFromGuard(
     refreshToken: string,
     req: Request,
@@ -144,21 +117,21 @@ export class AuthService {
     }
 
     const sessionId = payload.sub;
-    const LOCK_TTL_MS = 5000;
+    const lockTtlMs = 5000;
 
-    // CONTROL DE CONCURRENCIA PARA EVITAR REFRESH MÚLTIPLE
     const lockedSession = await this.sessionModel.findOne({
       _id: sessionId,
       estado: true,
       bloqueado: true,
-      bloqueadoEn: { $gt: new Date(Date.now() - LOCK_TTL_MS) },
+      bloqueadoEn: { $gt: new Date(Date.now() - lockTtlMs) },
     });
 
     if (lockedSession) {
       await new Promise((resolve) => setTimeout(resolve, 1000));
       const updatedSession = await this.sessionModel.findById(sessionId);
-      if (!updatedSession?.estado)
+      if (!updatedSession?.estado) {
         throw new UnauthorizedException('Sesión invalidada durante el proceso');
+      }
       return payload;
     }
 
@@ -168,17 +141,14 @@ export class AuthService {
       { returnDocument: 'after' },
     );
 
-    if (!session)
+    if (!session) {
       throw new UnauthorizedException(
         'Sesión no disponible o bloqueada por seguridad',
       );
+    }
 
     try {
-      // VALIDACIÓN CRÍPTICA DEL REFRESH TOKEN
-      const isTokenValid = await bcrypt.compare(
-        refreshToken,
-        session.refreshToken,
-      );
+      const isTokenValid = await bcrypt.compare(refreshToken, session.refreshToken);
       if (!isTokenValid) {
         await this.sessionModel.findByIdAndUpdate(sessionId, { estado: false });
         this.clearCookies(req, res);
@@ -196,12 +166,12 @@ export class AuthService {
       }
 
       const user = await this.getUserWithPermisos(session.usuario.toString());
-      if (!user)
+      if (!user) {
         throw new UnauthorizedException(
           'Acceso denegado: Usuario inactivo o inexistente',
         );
+      }
 
-      // REGENERACIÓN DE CREDENCIALES
       const accessToken = this.generarAccessToken(user, sessionId);
       const nuevoRefreshToken = this.generarRefreshToken(sessionId);
       const nuevoHash = await bcrypt.hash(nuevoRefreshToken, 10);
@@ -224,9 +194,6 @@ export class AuthService {
     }
   }
 
-  // ======================================================
-  // [ AUTH ] - CIERRE GLOBAL DE SESIONES
-  // ======================================================
   async logoutAll(usuarioId: string, req: Request, res: Response) {
     const activeSessions = await this.sessionModel
       .find({
@@ -246,16 +213,11 @@ export class AuthService {
     this.notificationsService.emitirCierreGlobalSesiones(usuarioId, sessionIds);
 
     this.clearCookies(req, res);
-    const payload = {
+    return {
       message: 'Todas las sesiones activas han sido revocadas exitosamente',
     };
-
-    return payload;
   }
 
-  // ======================================================
-  // [ READ ] - PERFIL DEL USUARIO AUTENTICADO
-  // ======================================================
   async me(usuarioId: string) {
     const user = await this.getUserWithPermisos(usuarioId);
     if (!user) throw new NotFoundException('Perfil de usuario no localizado');
@@ -263,16 +225,13 @@ export class AuthService {
     return {
       status: 'success',
       data: {
-        usuario: this.formatearUsuario(user.toObject()),
+        usuario: this.formatearUsuario(user),
       },
     };
   }
 
-  // ======================================================
-  // [ READ ] - LISTADO DE SESIONES ACTIVAS PROPIAS
-  // ======================================================
   async mySessions(usuarioId: string): Promise<Session[]> {
-    return await this.sessionModel
+    return this.sessionModel
       .find({
         usuario: new Types.ObjectId(usuarioId),
         estado: true,
@@ -282,47 +241,56 @@ export class AuthService {
       .exec();
   }
 
-  // ======================================================
-  // [ READ ] - ADMINISTRACIÓN GLOBAL DE SESIONES (ADMIN)
-  // ======================================================
-  async allSessions(): Promise<Session[]> {
-    return await this.sessionModel
-      .find({ estado: true })
+  async allSessions(actorContext: AccessActor): Promise<Session[]> {
+    const actor = await this.getUserWithPermisos(actorContext.sub);
+    const userIds = await this.getVisibleUserIds(actor);
+
+    return this.sessionModel
+      .find({
+        estado: true,
+        usuario: { $in: userIds },
+      })
       .select('-refreshToken -__v')
       .populate({
         path: 'usuario',
-        select: 'nombre email rol -_id',
-        populate: { path: 'rol', select: 'nombre -_id' },
+        select: 'nombre email rol organization ownerAdmin esSuperAdmin -password',
+        populate: [
+          { path: 'rol', select: 'nombre -_id' },
+          { path: 'organization', select: 'nombre slug -_id' },
+        ],
       })
       .sort({ createdAt: -1 })
       .exec();
   }
 
-  // ======================================================
-  // [ DELETE ] - REVOCACIÓN MANUAL DE SESIÓN
-  // ======================================================
   async revokeSession(
     sessionId: string,
-    usuarioId: string,
-    esAdmin: boolean,
+    actorContext: AccessActor,
     req: Request,
     res: Response,
   ): Promise<{ message: string }> {
+    const actor = await this.getUserWithPermisos(actorContext.sub);
     const session = await this.sessionModel.findById(sessionId);
-    if (!session || !session.estado)
+    if (!session || !session.estado) {
       throw new NotFoundException(
         'La sesión solicitada no existe o ya está inactiva',
       );
+    }
 
-    if (!esAdmin && session.usuario.toString() !== usuarioId) {
-      throw new ForbiddenException(
-        'Acceso denegado: No posee privilegios para revocar esta sesión',
-      );
+    if (session.usuario.toString() !== actor._id.toString()) {
+      const targetUser = await this.getUserWithPermisos(session.usuario.toString());
+      if (!actor.esSuperAdmin) {
+        this.accessControlService.ensureSameOrganization(actor, targetUser.organization);
+        if (!this.accessControlService.canManageDescendant(actor, targetUser)) {
+          throw new ForbiddenException(
+            'Acceso denegado: No posees privilegios para revocar esta sesión',
+          );
+        }
+      }
     }
 
     await this.sessionModel.findByIdAndUpdate(sessionId, { estado: false });
 
-    // VERIFICACIÓN SI SE TRATA DE LA SESIÓN ACTUAL DEL SOLICITANTE
     const currentRefreshToken = req.cookies?.refresh_token;
     if (currentRefreshToken) {
       try {
@@ -330,13 +298,12 @@ export class AuthService {
           secret: this.configService.get('JWT_REFRESH_SECRET'),
         });
         if (payload.sub === sessionId) this.clearCookies(req, res);
-      } catch (error) {}
+      } catch {
+        // La cookie actual puede estar caducada; no bloquea la revocación.
+      }
     }
 
-    // NOTIFICACIÓN DE SEGURIDAD (SESSION REVOCATION)
-    const user = await this.userModel
-      .findById(session.usuario)
-      .select('email nombre');
+    const user = await this.userModel.findById(session.usuario).select('email nombre');
     if (user) {
       await this.notificationsService.notificarSesionRevocada(
         session.usuario.toString(),
@@ -349,16 +316,12 @@ export class AuthService {
     return { message: 'La sesión ha sido revocada y notificada correctamente' };
   }
 
-  // ======================================================
-  // [ SECURITY ] - RECUPERACIÓN DE CONTRASEÑA (FORGOT)
-  // ======================================================
   async forgotPassword(dto: ForgotPasswordDto) {
     const user = await this.userModel
-      .findOne({ email: dto.email, estado: true })
+      .findOne({ email: dto.email.trim().toLowerCase(), estado: true })
       .exec();
 
     if (!user) {
-      // RESPUESTA GENÉRICA PARA EVITAR ENUMERACIÓN DE USUARIOS (SEGURIDAD)
       return {
         message:
           'Si el correo existe, recibirá un código de verificación en breve',
@@ -366,7 +329,7 @@ export class AuthService {
     }
 
     const code = Math.floor(100000 + Math.random() * 900000).toString();
-    const expiration = new Date(Date.now() + 5 * 60 * 1000); // 5 MINUTOS DE VALIDEZ
+    const expiration = new Date(Date.now() + 5 * 60 * 1000);
 
     await this.passwordResetModel.create({
       usuario: user._id,
@@ -383,15 +346,13 @@ export class AuthService {
     return { message: 'Código de verificación enviado satisfactoriamente' };
   }
 
-  // ======================================================
-  // [ SECURITY ] - VALIDACIÓN DE CÓDIGO DE RECUPERACIÓN
-  // ======================================================
   async verifyCode(dto: VerifyCodeDto) {
-    const user = await this.userModel.findOne({ email: dto.email });
-    if (!user)
+    const user = await this.userModel.findOne({ email: dto.email.trim().toLowerCase() });
+    if (!user) {
       throw new UnauthorizedException(
         'Error de validación: Datos de recuperación incorrectos',
       );
+    }
 
     const reset = await this.passwordResetModel.findOne({
       usuario: user._id,
@@ -399,27 +360,27 @@ export class AuthService {
       usado: false,
     });
 
-    if (!reset)
+    if (!reset) {
       throw new UnauthorizedException(
         'El código ingresado es inválido o ya fue utilizado',
       );
-    if (reset.expiraEn < new Date())
+    }
+    if (reset.expiraEn < new Date()) {
       throw new UnauthorizedException('El código de verificación ha expirado');
+    }
 
     return { message: 'Verificación exitosa: Código validado correctamente' };
   }
 
-  // ======================================================
-  // [ SECURITY ] - RESETEO FINAL DE CONTRASEÑA
-  // ======================================================
   async resetPassword(dto: ResetPasswordDto) {
     const user = await this.userModel
-      .findOne({ email: dto.email, estado: true })
+      .findOne({ email: dto.email.trim().toLowerCase(), estado: true })
       .exec();
-    if (!user)
+    if (!user) {
       throw new UnauthorizedException(
         'Operación no permitida: Usuario inválido',
       );
+    }
 
     const reset = await this.passwordResetModel.findOne({
       usuario: user._id,
@@ -433,21 +394,17 @@ export class AuthService {
       );
     }
 
-    // 1. ACTUALIZACIÓN DE SEGURIDAD
     user.password = await bcrypt.hash(dto.password, 10);
     await user.save();
 
-    // 2. INVALIDACIÓN DE CÓDIGO UTILIZADO
     reset.usado = true;
     await reset.save();
 
-    // 3. CIERRE PREVENTIVO DE TODAS LAS SESIONES ACTIVAS
     await this.sessionModel.updateMany(
       { usuario: user._id, estado: true },
       { estado: false },
     );
 
-    // 4. NOTIFICACIÓN DE CAMBIO DE CONTRASEÑA EXITOSO
     await this.notificationsService.notificarCambioPassword(
       user._id.toString(),
       user.nombre,
@@ -459,9 +416,6 @@ export class AuthService {
     };
   }
 
-  // ======================================================
-  // [ SECURITY ] - VALIDACIÓN DE SESIÓN ACTIVA (GUARD)
-  // ======================================================
   async validateSession(sessionId: string): Promise<boolean> {
     const session = await this.sessionModel.findById(sessionId);
     return !!(session && session.estado);
@@ -469,14 +423,15 @@ export class AuthService {
 
   async buildRequestUserContext(usuarioId: string, sessionId: string) {
     const user = await this.getUserWithPermisos(usuarioId);
-    if (!user)
+    if (!user) {
       throw new UnauthorizedException(
         'Acceso denegado: Usuario inactivo o inexistente',
       );
+    }
 
     const permisosRol =
       (user.rol as any)?.permisos?.map((p: any) => p.nombre) ?? [];
-    const userFormateado = this.formatearUsuario(user.toObject());
+    const userFormateado = this.formatearUsuario(user);
 
     return {
       sub: user._id.toString(),
@@ -486,25 +441,34 @@ export class AuthService {
       rol: (user.rol as any)?.nombre,
       permisos: permisosRol,
       permisosFront: userFormateado.permisos,
+      organizationId: user.organization?._id?.toString?.() ?? user.organization?.toString?.() ?? null,
+      ownerAdminId: user.ownerAdmin?._id?.toString?.() ?? user.ownerAdmin?.toString?.() ?? null,
+      esSuperAdmin: !!user.esSuperAdmin,
     };
   }
-
-  // ======================================================
-  // [ HELPERS ] - MÉTODOS DE APOYO INTERNO
-  // ======================================================
 
   private async getUserWithPermisos(userId: string): Promise<User> {
     return (await this.userModel
       .findOne({ _id: userId, estado: true })
       .select('+password')
-      .populate({
-        path: 'rol',
-        populate: {
-          path: 'permisos',
-          match: { estado: true },
-          populate: { path: 'modulo', select: 'nombre' },
+      .populate([
+        {
+          path: 'rol',
+          populate: {
+            path: 'permisos',
+            match: { estado: true },
+            populate: { path: 'modulo', select: 'nombre' },
+          },
         },
-      })
+        {
+          path: 'organization',
+          select: 'nombre slug estado _id',
+        },
+        {
+          path: 'ownerAdmin',
+          select: 'nombre email _id',
+        },
+      ])
       .exec()) as User;
   }
 
@@ -512,25 +476,37 @@ export class AuthService {
     const user = await this.userModel
       .findOne({ email })
       .select('+password')
-      .populate({
-        path: 'rol',
-        select: 'nombre',
-        populate: {
-          path: 'permisos',
+      .populate([
+        {
+          path: 'rol',
           select: 'nombre',
-          populate: { path: 'modulo', select: 'nombre' },
+          populate: {
+            path: 'permisos',
+            select: 'nombre',
+            populate: { path: 'modulo', select: 'nombre' },
+          },
         },
-      })
+        {
+          path: 'organization',
+          select: 'nombre slug estado _id',
+        },
+        {
+          path: 'ownerAdmin',
+          select: 'nombre email _id',
+        },
+      ])
       .exec();
 
-    if (!user)
+    if (!user) {
       throw new UnauthorizedException(
         'Acceso denegado: El correo electrónico no está registrado',
       );
-    if (!user.estado)
+    }
+    if (!user.estado) {
       throw new UnauthorizedException(
         'Acceso denegado: La cuenta de usuario se encuentra inactiva',
       );
+    }
 
     return user;
   }
@@ -549,6 +525,15 @@ export class AuthService {
         rol: (user.rol as any)?.nombre,
         permisos: permisosRol,
         permisosFront: userFormateado.permisos,
+        organizationId:
+          user.organization?._id?.toString?.() ??
+          user.organization?.toString?.() ??
+          null,
+        ownerAdminId:
+          user.ownerAdmin?._id?.toString?.() ??
+          user.ownerAdmin?.toString?.() ??
+          null,
+        esSuperAdmin: !!user.esSuperAdmin,
       },
       {
         secret: this.configService.get('JWT_SECRET'),
@@ -577,10 +562,7 @@ export class AuthService {
     const cookieOptions = {
       httpOnly: true,
       secure: isCrossSiteRequest,
-      sameSite: (isCrossSiteRequest ? 'none' : 'lax') as
-        | 'none'
-        | 'lax'
-        | 'strict',
+      sameSite: (isCrossSiteRequest ? 'none' : 'lax') as 'none' | 'lax' | 'strict',
     };
 
     res.cookie('access_token', accessToken, {
@@ -599,10 +581,7 @@ export class AuthService {
     const clearOptions = {
       httpOnly: true,
       secure: isCrossSiteRequest,
-      sameSite: (isCrossSiteRequest ? 'none' : 'lax') as
-        | 'none'
-        | 'lax'
-        | 'strict',
+      sameSite: (isCrossSiteRequest ? 'none' : 'lax') as 'none' | 'lax' | 'strict',
     };
 
     res.clearCookie('access_token', clearOptions);
@@ -636,6 +615,32 @@ export class AuthService {
       permisos: agruparPermisos(user.rol?.permisos ?? []),
       estado: user.estado,
       createdAt: user.createdAt,
+      organization: user.organization ?? null,
+      ownerAdmin: user.ownerAdmin ?? null,
+      esSuperAdmin: !!user.esSuperAdmin,
     };
+  }
+
+  private async getVisibleUserIds(actor: User): Promise<Types.ObjectId[]> {
+    if (actor.esSuperAdmin) {
+      const users = await this.userModel.find({ estado: true }).select('_id').exec();
+      return users.map((user) => new Types.ObjectId(user._id));
+    }
+
+    const query: Record<string, any> = {
+      estado: true,
+      organization: actor.organization,
+    };
+
+    if (!this.accessControlService.canManageWholeOrganization(actor)) {
+      query.$or = [
+        { _id: actor._id },
+        { createdBy: actor._id },
+        { ancestryPath: actor._id },
+      ];
+    }
+
+    const users = await this.userModel.find(query).select('_id').exec();
+    return users.map((user) => new Types.ObjectId(user._id));
   }
 }

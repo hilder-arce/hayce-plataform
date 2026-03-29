@@ -1,6 +1,3 @@
-<!-- ================================================ -->
-<!-- [ PAGE HEADER ] - TITULO Y NAVEGACION            -->
-<!-- ================================================ -->
 <div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
   <div class="space-y-2">
     <div class="flex items-center gap-2 text-sm font-medium text-slate-500">
@@ -9,32 +6,51 @@
       <span class="text-slate-900">{{ isEditMode() ? 'Editar' : 'Nueva' }}</span>
     </div>
     <h1 class="font-body text-3xl font-semibold tracking-tight text-slate-900 sm:text-[2rem]">
-      {{ isEditMode() ? 'Editar estación' : 'Nueva estación' }}
+      {{ isEditMode() ? 'Editar estacion' : 'Nueva estacion' }}
     </h1>
     <p class="max-w-2xl text-sm leading-6 text-slate-500 sm:text-base">
-      Completa los detalles de la estación para el sistema.
+      Completa los detalles de la estacion para el sistema.
     </p>
   </div>
 </div>
 
-<!-- ================================================ -->
-<!-- [ FORMULARIO ] - DATOS DE LA ESTACION            -->
-<!-- ================================================ -->
 <div class="mx-auto max-w-2xl">
   <app-card>
     @if (loading() && isEditMode()) {
       <div class="flex flex-col items-center justify-center gap-4 py-12">
         <app-spinner size="lg" />
-        <p class="text-sm text-slate-500">Preparando datos de la estación...</p>
+        <p class="text-sm text-slate-500">Preparando datos de la estacion...</p>
       </div>
     } @else {
       <form [formGroup]="stationForm" (ngSubmit)="onSubmit()" class="space-y-6">
-        <!-- SECCION: INFORMACION BASICA -->
         <div class="space-y-4">
+          @if (isSuperAdmin()) {
+            <div class="space-y-1.5">
+              <label class="text-sm font-semibold text-slate-700">Organizacion</label>
+              <div class="relative">
+                <select
+                  formControlName="organization"
+                  class="block w-full appearance-none rounded-xl border border-slate-200 bg-white px-4 py-2.5 pr-10 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                >
+                  <option value="">Selecciona una organizacion</option>
+                  @for (organization of organizations(); track organization._id) {
+                    <option [value]="organization._id">{{ organization.nombre }}</option>
+                  }
+                </select>
+                <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400">
+                  <i class="icon text-lg">expand_more</i>
+                </div>
+              </div>
+              @if (getFieldError('organization')) {
+                <p class="text-xs font-medium text-red-500">{{ getFieldError('organization') }}</p>
+              }
+            </div>
+          }
+
           <div>
             <app-input
-              label="Nombre de la estación"
-              placeholder="Ej: Estación Norte 01"
+              label="Nombre de la estacion"
+              placeholder="Ej: Estacion Norte 01"
               formControlName="nombre"
               [error]="getFieldError('nombre')"
               [disabled]="loading()"
@@ -43,8 +59,8 @@
 
           <div>
             <app-input
-              label="Descripción funcional"
-              placeholder="Describe el propósito o ubicación de esta estación..."
+              label="Descripcion funcional"
+              placeholder="Describe el proposito o ubicacion de esta estacion..."
               formControlName="descripcion"
               [error]="getFieldError('descripcion')"
               [disabled]="loading()"
@@ -65,7 +81,7 @@
             type="submit"
             [loading]="loading()"
           >
-            {{ isEditMode() ? 'Guardar cambios' : 'Crear estación' }}
+            {{ isEditMode() ? 'Guardar cambios' : 'Crear estacion' }}
           </app-button>
         </div>
       </form>

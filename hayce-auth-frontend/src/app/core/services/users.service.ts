@@ -16,9 +16,6 @@ import { GraphqlApiService } from './graphql-api.service';
 export class UsersService {
   private readonly graphql = inject(GraphqlApiService);
 
-  // ==========================================
-  // [ GET ] - LISTAR USUARIOS PAGINADOS
-  // ==========================================
   getUsers(
     page = 1,
     limit = 10,
@@ -33,16 +30,45 @@ export class UsersService {
             ${operation}(page: $page, limit: $limit, search: $search) {
               total
               items {
+                ...UserFields
+              }
+            }
+          }
+
+          fragment UserFields on User {
+            id
+            nombre
+            email
+            estado
+            esSuperAdmin
+            createdAt
+            updatedAt
+            organization {
+              id
+              nombre
+              slug
+              estado
+            }
+            createdBy {
+              id
+              nombre
+              email
+            }
+            ownerAdmin {
+              id
+              nombre
+              email
+            }
+            rol {
+              id
+              nombre
+              descripcion
+              estado
+              organization {
                 id
                 nombre
-                email
+                slug
                 estado
-                createdAt
-                updatedAt
-                rol {
-                  id
-                  nombre
-                }
               }
             }
           }
@@ -52,9 +78,6 @@ export class UsersService {
       .pipe(map((response) => this.mapUsersPage(response[operation] ?? { items: [], total: 0 })));
   }
 
-  // ==========================================
-  // [ GET ] - OBTENER UN USUARIO POR ID
-  // ==========================================
   getUserById(id: string): Observable<User> {
     return this.graphql
       .query<{ user: UserGraphql }>(
@@ -65,11 +88,46 @@ export class UsersService {
               nombre
               email
               estado
+              esSuperAdmin
               createdAt
               updatedAt
+              organization {
+                id
+                nombre
+                slug
+                estado
+              }
+              createdBy {
+                id
+                nombre
+                email
+              }
+              ownerAdmin {
+                id
+                nombre
+                email
+              }
               rol {
                 id
                 nombre
+                descripcion
+                estado
+                organization {
+                  id
+                  nombre
+                  slug
+                  estado
+                }
+                createdBy {
+                  id
+                  nombre
+                  email
+                }
+                ownerAdmin {
+                  id
+                  nombre
+                  email
+                }
                 permisos {
                   id
                   nombre
@@ -89,9 +147,6 @@ export class UsersService {
       .pipe(map((response) => this.mapUser(response.user)));
   }
 
-  // ==========================================
-  // [ POST ] - CREAR UN NUEVO USUARIO
-  // ==========================================
   createUser(data: UserFormData): Observable<User> {
     return this.graphql
       .mutate<{ createUser: UserGraphql }>(
@@ -102,8 +157,25 @@ export class UsersService {
               nombre
               email
               estado
+              esSuperAdmin
               createdAt
               updatedAt
+              organization {
+                id
+                nombre
+                slug
+                estado
+              }
+              createdBy {
+                id
+                nombre
+                email
+              }
+              ownerAdmin {
+                id
+                nombre
+                email
+              }
               rol {
                 id
                 nombre
@@ -116,9 +188,6 @@ export class UsersService {
       .pipe(map((response) => this.mapUser(response.createUser)));
   }
 
-  // ==========================================
-  // [ PATCH ] - ACTUALIZAR UN USUARIO
-  // ==========================================
   updateUser(id: string, data: Partial<UserFormData>): Observable<User> {
     return this.graphql
       .mutate<{ updateUser: UserGraphql }>(
@@ -129,8 +198,25 @@ export class UsersService {
               nombre
               email
               estado
+              esSuperAdmin
               createdAt
               updatedAt
+              organization {
+                id
+                nombre
+                slug
+                estado
+              }
+              createdBy {
+                id
+                nombre
+                email
+              }
+              ownerAdmin {
+                id
+                nombre
+                email
+              }
               rol {
                 id
                 nombre
@@ -143,9 +229,6 @@ export class UsersService {
       .pipe(map((response) => this.mapUser(response.updateUser)));
   }
 
-  // ==========================================
-  // [ PATCH ] - ACTUALIZAR EL PERFIL DEL USUARIO ACTUAL
-  // ==========================================
   updateMe(data: Partial<UserFormData>): Observable<User> {
     return this.graphql
       .mutate<{ updateMyProfile: UserGraphql }>(
@@ -156,8 +239,25 @@ export class UsersService {
               nombre
               email
               estado
+              esSuperAdmin
               createdAt
               updatedAt
+              organization {
+                id
+                nombre
+                slug
+                estado
+              }
+              createdBy {
+                id
+                nombre
+                email
+              }
+              ownerAdmin {
+                id
+                nombre
+                email
+              }
               rol {
                 id
                 nombre
@@ -170,9 +270,6 @@ export class UsersService {
       .pipe(map((response) => this.mapUser(response.updateMyProfile)));
   }
 
-  // ==========================================
-  // [ PATCH ] - CAMBIAR LA CONTRASEÑA DEL USUARIO ACTUAL
-  // ==========================================
   changeMyPassword(data: UserPasswordPayload): Observable<void> {
     return this.graphql
       .mutate<{ changeMyPassword: { message?: string; mensaje?: string } }>(
@@ -189,10 +286,8 @@ export class UsersService {
       .pipe(map(() => void 0));
   }
 
-  // ==========================================
-  // [ PATCH ] - CAMBIAR LA CONTRASEÑA DE UN USUARIO
-  // ==========================================
   changePassword(id: string, data: UserPasswordPayload): Observable<void> {
+    void id;
     return this.graphql
       .mutate<{ changeMyPassword: { message?: string; mensaje?: string } }>(
         `
@@ -208,9 +303,6 @@ export class UsersService {
       .pipe(map(() => void 0));
   }
 
-  // ==========================================
-  // [ PATCH ] - CAMBIAR LA CONTRASE?A DE UN USUARIO (ADMIN)
-  // ==========================================
   adminChangePassword(id: string, passwordNuevo: string): Observable<void> {
     return this.graphql
       .mutate<{ adminChangePassword: { message?: string; mensaje?: string } }>(
@@ -227,9 +319,6 @@ export class UsersService {
       .pipe(map(() => void 0));
   }
 
-  // ==========================================
-  // [ DELETE ] - DESACTIVAR UN USUARIO
-  // ==========================================
   deleteUser(id: string): Observable<void> {
     return this.graphql
       .mutate<{ removeUser: UserGraphql }>(
@@ -245,9 +334,6 @@ export class UsersService {
       .pipe(map(() => void 0));
   }
 
-  // ==========================================
-  // [ PATCH ] - RESTAURAR UN USUARIO INACTIVO
-  // ==========================================
   restoreUser(id: string): Observable<void> {
     return this.graphql
       .mutate<{ restoreUser: UserGraphql }>(
@@ -276,8 +362,31 @@ export class UsersService {
       nombre: user.nombre,
       email: user.email,
       estado: user.estado,
+      esSuperAdmin: user.esSuperAdmin,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
+      organization: user.organization
+        ? {
+            _id: user.organization.id,
+            nombre: user.organization.nombre,
+            slug: user.organization.slug,
+            estado: user.organization.estado,
+          }
+        : null,
+      createdBy: user.createdBy
+        ? {
+            _id: user.createdBy.id,
+            nombre: user.createdBy.nombre,
+            email: user.createdBy.email,
+          }
+        : null,
+      ownerAdmin: user.ownerAdmin
+        ? {
+            _id: user.ownerAdmin.id,
+            nombre: user.ownerAdmin.nombre,
+            email: user.ownerAdmin.email,
+          }
+        : null,
       rol: typeof user.rol === 'string' ? user.rol : this.mapRole(user.rol),
     };
   }
@@ -288,6 +397,28 @@ export class UsersService {
       nombre: role.nombre,
       descripcion: role.descripcion,
       estado: role.estado,
+      organization: role.organization
+        ? {
+            _id: role.organization.id,
+            nombre: role.organization.nombre,
+            slug: role.organization.slug,
+            estado: role.organization.estado,
+          }
+        : null,
+      createdBy: role.createdBy
+        ? {
+            _id: role.createdBy.id,
+            nombre: role.createdBy.nombre,
+            email: role.createdBy.email,
+          }
+        : null,
+      ownerAdmin: role.ownerAdmin
+        ? {
+            _id: role.ownerAdmin.id,
+            nombre: role.ownerAdmin.nombre,
+            email: role.ownerAdmin.email,
+          }
+        : null,
       permisos: (role.permisos ?? []).map((permission) => ({
         _id: permission.id,
         nombre: permission.nombre,
@@ -311,8 +442,25 @@ interface UserGraphql {
   nombre: string;
   email: string;
   estado: boolean;
+  esSuperAdmin?: boolean;
   createdAt: string;
   updatedAt: string;
+  organization?: {
+    id: string;
+    nombre: string;
+    slug: string;
+    estado: boolean;
+  } | null;
+  createdBy?: {
+    id: string;
+    nombre: string;
+    email?: string;
+  } | null;
+  ownerAdmin?: {
+    id: string;
+    nombre: string;
+    email?: string;
+  } | null;
   rol: RoleGraphql | string;
 }
 
@@ -321,6 +469,22 @@ interface RoleGraphql {
   nombre: string;
   descripcion?: string;
   estado: boolean;
+  organization?: {
+    id: string;
+    nombre: string;
+    slug: string;
+    estado: boolean;
+  } | null;
+  createdBy?: {
+    id: string;
+    nombre: string;
+    email?: string;
+  } | null;
+  ownerAdmin?: {
+    id: string;
+    nombre: string;
+    email?: string;
+  } | null;
   permisos?: PermissionGraphql[];
 }
 

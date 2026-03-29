@@ -15,9 +15,6 @@ import { GraphqlApiService } from './graphql-api.service';
 export class StationsService {
   private readonly graphql = inject(GraphqlApiService);
 
-  // ==========================================
-  // [ GET ] - LISTADO DE ESTACIONES ACTIVAS O INACTIVAS
-  // ==========================================
   getStations(includeInactive = false): Observable<AppStationItem[]> {
     const operation = includeInactive ? 'inactiveStations' : 'stations';
     return this.graphql
@@ -31,16 +28,28 @@ export class StationsService {
               estado
               createdAt
               updatedAt
+              organization {
+                id
+                nombre
+                slug
+                estado
+              }
+              createdBy {
+                id
+                nombre
+                email
+              }
             }
           }
         `,
       )
-      .pipe(map((response) => (response[operation] ?? []).map((station) => this.mapStation(station))));
+      .pipe(
+        map((response) =>
+          (response[operation] ?? []).map((station) => this.mapStation(station)),
+        ),
+      );
   }
 
-  // ==========================================
-  // [ GET ] - OBTENER UNA ESTACION POR IDENTIFICADOR
-  // ==========================================
   getStationById(id: string, inactive = false): Observable<AppStationItem> {
     const operation = inactive ? 'inactiveStation' : 'station';
     return this.graphql
@@ -54,17 +63,29 @@ export class StationsService {
               estado
               createdAt
               updatedAt
+              organization {
+                id
+                nombre
+                slug
+                estado
+              }
+              createdBy {
+                id
+                nombre
+                email
+              }
             }
           }
         `,
         { id },
       )
-      .pipe(map((response) => this.mapStation((response[operation] as StationGraphql)!)));
+      .pipe(
+        map((response) =>
+          this.mapStation((response[operation] as StationGraphql)!),
+        ),
+      );
   }
 
-  // ==========================================
-  // [ POST ] - CREAR UNA NUEVA ESTACION
-  // ==========================================
   createStation(payload: CreateStationPayload): Observable<AppStationItem> {
     return this.graphql
       .mutate<{ createStation: StationGraphql }>(
@@ -77,6 +98,17 @@ export class StationsService {
               estado
               createdAt
               updatedAt
+              organization {
+                id
+                nombre
+                slug
+                estado
+              }
+              createdBy {
+                id
+                nombre
+                email
+              }
             }
           }
         `,
@@ -85,10 +117,10 @@ export class StationsService {
       .pipe(map((response) => this.mapStation(response.createStation)));
   }
 
-  // ==========================================
-  // [ PATCH ] - ACTUALIZAR UNA ESTACION EXISTENTE
-  // ==========================================
-  updateStation(id: string, payload: UpdateStationPayload): Observable<AppStationItem> {
+  updateStation(
+    id: string,
+    payload: UpdateStationPayload,
+  ): Observable<AppStationItem> {
     return this.graphql
       .mutate<{ updateStation: StationGraphql }>(
         `
@@ -100,6 +132,17 @@ export class StationsService {
               estado
               createdAt
               updatedAt
+              organization {
+                id
+                nombre
+                slug
+                estado
+              }
+              createdBy {
+                id
+                nombre
+                email
+              }
             }
           }
         `,
@@ -108,9 +151,6 @@ export class StationsService {
       .pipe(map((response) => this.mapStation(response.updateStation)));
   }
 
-  // ==========================================
-  // [ DELETE ] - DESACTIVAR UNA ESTACION
-  // ==========================================
   deleteStation(id: string): Observable<AppStationItem> {
     return this.graphql
       .mutate<{ removeStation: StationGraphql }>(
@@ -123,6 +163,17 @@ export class StationsService {
               estado
               createdAt
               updatedAt
+              organization {
+                id
+                nombre
+                slug
+                estado
+              }
+              createdBy {
+                id
+                nombre
+                email
+              }
             }
           }
         `,
@@ -131,9 +182,6 @@ export class StationsService {
       .pipe(map((response) => this.mapStation(response.removeStation)));
   }
 
-  // ==========================================
-  // [ PATCH ] - RESTAURAR UNA ESTACION INACTIVA
-  // ==========================================
   restoreStation(id: string): Observable<AppStationItem> {
     return this.graphql
       .mutate<{ restoreStation: StationGraphql }>(
@@ -146,6 +194,17 @@ export class StationsService {
               estado
               createdAt
               updatedAt
+              organization {
+                id
+                nombre
+                slug
+                estado
+              }
+              createdBy {
+                id
+                nombre
+                email
+              }
             }
           }
         `,
@@ -162,6 +221,21 @@ export class StationsService {
       estado: station.estado,
       createdAt: station.createdAt,
       updatedAt: station.updatedAt,
+      organization: station.organization
+        ? {
+            _id: station.organization.id,
+            nombre: station.organization.nombre,
+            slug: station.organization.slug,
+            estado: station.organization.estado,
+          }
+        : null,
+      createdBy: station.createdBy
+        ? {
+            _id: station.createdBy.id,
+            nombre: station.createdBy.nombre,
+            email: station.createdBy.email,
+          }
+        : null,
     };
   }
 }
@@ -173,4 +247,15 @@ interface StationGraphql {
   estado: boolean;
   createdAt?: string;
   updatedAt?: string;
+  organization?: {
+    id: string;
+    nombre: string;
+    slug: string;
+    estado: boolean;
+  } | null;
+  createdBy?: {
+    id: string;
+    nombre: string;
+    email?: string;
+  } | null;
 }

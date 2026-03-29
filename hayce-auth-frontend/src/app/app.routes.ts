@@ -76,6 +76,18 @@ export const routes: Routes = [
         data: { permissions: ['listar_usuarios'] },
       },
       {
+        path: 'organizations',
+        loadComponent: () => import('./features/dashboard/organizations/organizations.component').then((m) => m.OrganizationsComponent),
+      },
+      {
+        path: 'organizations/new',
+        loadComponent: () => import('./features/dashboard/organizations/organization-form/organization-form.component').then((m) => m.OrganizationFormComponent),
+      },
+      {
+        path: 'organizations/edit/:id',
+        loadComponent: () => import('./features/dashboard/organizations/organization-form/organization-form.component').then((m) => m.OrganizationFormComponent),
+      },
+      {
         path: 'users/new',
         loadComponent: () => import('./features/dashboard/users/user-form/user-form.component').then((m) => m.UserFormComponent),
         canActivate: [permissionGuard],

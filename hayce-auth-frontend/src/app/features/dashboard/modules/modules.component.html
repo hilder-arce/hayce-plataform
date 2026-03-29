@@ -127,7 +127,7 @@
             </td>
           </tr>
         } @else {
-          @for (module of filteredModules(); track module._id) {
+          @for (module of paginatedModules(); track module._id) {
             <tr class="transition-colors hover:bg-slate-50/80">
               <td class="px-6 py-4">
                 <div class="flex items-center gap-3">
@@ -196,5 +196,39 @@
         }
       </tbody>
     </table>
+  </div>
+
+  <div footer class="flex w-full flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+    <div class="text-sm text-slate-500">
+      Mostrando
+      <span class="font-semibold text-slate-900">{{ paginatedModules().length }}</span>
+      de
+      <span class="font-semibold text-slate-900">{{ filteredModules().length }}</span>
+      modulos
+    </div>
+
+    <div class="flex items-center justify-between gap-3 sm:justify-end">
+      <app-button
+        variant="ghost"
+        size="sm"
+        [disabled]="currentPage() === 1"
+        (onClick)="changePage(currentPage() - 1)"
+      >
+        Anterior
+      </app-button>
+
+      <div class="min-w-[4.5rem] text-center text-sm font-medium text-slate-700">
+        {{ currentPage() }} / {{ totalPages() }}
+      </div>
+
+      <app-button
+        variant="ghost"
+        size="sm"
+        [disabled]="currentPage() >= totalPages()"
+        (onClick)="changePage(currentPage() + 1)"
+      >
+        Siguiente
+      </app-button>
+    </div>
   </div>
 </app-card>

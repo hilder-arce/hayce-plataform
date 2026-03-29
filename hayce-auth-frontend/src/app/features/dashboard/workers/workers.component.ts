@@ -40,11 +40,16 @@ export class WorkersComponent implements OnInit {
   protected readonly showInactive = signal(false);
   protected readonly searchTerm = signal('');
   protected readonly workerPendingId = signal<string | null>(null);
+  protected readonly currentPage = signal(1);
+  protected readonly pageSize = 10;
 
   protected readonly canCreate = this.authService.hasPermission('crear_trabajador');
   protected readonly canUpdate = this.authService.hasPermission('actualizar_trabajador');
   protected readonly canDelete = this.authService.hasPermission('eliminar_trabajador');
   protected readonly canRestore = this.authService.hasPermission('eliminar_trabajador');
+  protected readonly isSuperAdmin = computed(
+    () => !!this.authService.currentUser()?.esSuperAdmin,
+  );
 
   protected readonly filteredWorkers = computed(() => {
     const term = this.searchTerm().trim().toLowerCase();
@@ -57,8 +62,19 @@ export class WorkersComponent implements OnInit {
         item.nombres.toLowerCase().includes(term) ||
         item.apellidos.toLowerCase().includes(term) ||
         item.correo?.toLowerCase().includes(term) ||
-        item.numero_telefono?.toLowerCase().includes(term)
+        item.numero_telefono?.toLowerCase().includes(term) ||
+        item.organization?.nombre?.toLowerCase().includes(term) ||
+        item.createdBy?.nombre?.toLowerCase().includes(term)
     );
+  });
+
+  protected readonly totalPages = computed(
+    () => Math.ceil(this.filteredWorkers().length / this.pageSize) || 1,
+  );
+
+  protected readonly paginatedWorkers = computed(() => {
+    const start = (this.currentPage() - 1) * this.pageSize;
+    return this.filteredWorkers().slice(start, start + this.pageSize);
   });
 
   ngOnInit(): void {
@@ -78,11 +94,17 @@ export class WorkersComponent implements OnInit {
 
   protected onSearch(term: string): void {
     this.searchTerm.set(term);
+    this.currentPage.set(1);
   }
 
   protected onToggleInactive(): void {
     this.showInactive.update((value) => !value);
+    this.currentPage.set(1);
     this.loadWorkers();
+  }
+
+  protected changePage(page: number): void {
+    this.currentPage.set(page);
   }
 
   protected confirmDelete(worker: AppWorkerItem): void {

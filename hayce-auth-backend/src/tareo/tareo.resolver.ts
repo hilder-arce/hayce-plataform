@@ -12,37 +12,61 @@ export class TareoResolver {
 
   @Mutation(() => Tareo)
   @RequirePermission('crear_tareo')
-  createTareo(@Args('input') input: CreateTareoDto, @CurrentUser() user: { sub: string }) {
-    return this.tareoService.create(input, user.sub);
+  createTareo(
+    @Args('input') input: CreateTareoDto,
+    @CurrentUser()
+    user: { sub: string; organizationId?: string | null; esSuperAdmin?: boolean },
+  ) {
+    return this.tareoService.create(input, user);
   }
 
   @Query(() => [Tareo])
   @RequirePermission('listar_tareos')
-  tareos() {
-    return this.tareoService.findAll();
+  tareos(
+    @CurrentUser()
+    user: { sub: string; organizationId?: string | null; esSuperAdmin?: boolean },
+  ) {
+    return this.tareoService.findAll(user);
   }
 
   @Query(() => Tareo)
   @RequirePermission('listar_tareos')
-  tareo(@Args('id') id: string) {
-    return this.tareoService.findOne(id);
+  tareo(
+    @Args('id') id: string,
+    @CurrentUser()
+    user: { sub: string; organizationId?: string | null; esSuperAdmin?: boolean },
+  ) {
+    return this.tareoService.findOne(id, user);
   }
 
   @Mutation(() => Tareo)
   @RequirePermission('actualizar_tareo')
-  updateTareo(@Args('id') id: string, @Args('input') input: UpdateTareoDto) {
-    return this.tareoService.update(id, input);
+  updateTareo(
+    @Args('id') id: string,
+    @Args('input') input: UpdateTareoDto,
+    @CurrentUser()
+    user: { sub: string; organizationId?: string | null; esSuperAdmin?: boolean },
+  ) {
+    return this.tareoService.update(id, input, user);
   }
 
   @Mutation(() => Tareo)
   @RequirePermission('eliminar_tareo')
-  removeTareo(@Args('id') id: string) {
-    return this.tareoService.remove(id);
+  removeTareo(
+    @Args('id') id: string,
+    @CurrentUser()
+    user: { sub: string; organizationId?: string | null; esSuperAdmin?: boolean },
+  ) {
+    return this.tareoService.remove(id, user);
   }
 
   @Mutation(() => Tareo)
   @RequirePermission('eliminar_tareo')
-  restoreTareo(@Args('id') id: string) {
-    return this.tareoService.restore(id);
+  restoreTareo(
+    @Args('id') id: string,
+    @CurrentUser()
+    user: { sub: string; organizationId?: string | null; esSuperAdmin?: boolean },
+  ) {
+    return this.tareoService.restore(id, user);
   }
 }

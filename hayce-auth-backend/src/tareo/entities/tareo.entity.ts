@@ -2,6 +2,7 @@ import { Field, ID, ObjectType, registerEnumType } from "@nestjs/graphql";
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
 import { Document, Types } from "mongoose";
 import { Activity } from "src/activities/entities/activity.entity";
+import { Organization } from "src/organizations/entities/organization.entity";
 import { Worker } from "src/workers/entities/worker.entity";
 import { User } from "src/users/entities/user.entity";
 
@@ -41,6 +42,10 @@ export class Tareo extends Document {
     @Prop({ type: Types.ObjectId, ref: 'User', required: true })
     @Field(() => User)
     creado_por: Types.ObjectId;
+
+    @Prop({ type: Types.ObjectId, ref: 'Organization', required: true })
+    @Field(() => Organization, { nullable: true })
+    organization: Types.ObjectId;
 
     @Prop({ required: true })
     @Field()

@@ -1,6 +1,8 @@
 import { Field, ID, ObjectType } from "@nestjs/graphql";
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
-import { Document } from "mongoose";
+import { Document, Types } from "mongoose";
+import { Organization } from "src/organizations/entities/organization.entity";
+import { User } from "src/users/entities/user.entity";
 
 @Schema({
     timestamps: true 
@@ -31,6 +33,14 @@ export class Worker extends Document {
     @Prop({ default: true })
     @Field()
     estado: boolean;
+
+    @Prop({ type: Types.ObjectId, ref: 'Organization', required: true })
+    @Field(() => Organization, { nullable: true })
+    organization: Types.ObjectId;
+
+    @Prop({ type: Types.ObjectId, ref: 'User', required: true })
+    @Field(() => User, { nullable: true })
+    createdBy: Types.ObjectId;
 
     @Field()
     createdAt: Date;

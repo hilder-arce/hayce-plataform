@@ -1,4 +1,6 @@
 import { Field, ObjectType } from '@nestjs/graphql';
+import { Organization } from 'src/organizations/entities/organization.entity';
+import { User } from 'src/users/entities/user.entity';
 
 @ObjectType()
 export class AuthPermissionGroup {
@@ -22,6 +24,15 @@ export class AuthUserProfile {
 
   @Field({ nullable: true })
   rol?: string;
+
+  @Field(() => Organization, { nullable: true })
+  organization?: Organization | null;
+
+  @Field(() => User, { nullable: true })
+  ownerAdmin?: User | null;
+
+  @Field()
+  esSuperAdmin: boolean;
 
   @Field(() => [AuthPermissionGroup], { defaultValue: [] })
   permisos: AuthPermissionGroup[];

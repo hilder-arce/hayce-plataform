@@ -1,7 +1,4 @@
-<div class="max-w-4xl mx-auto space-y-6">
-  <!-- ================================================ -->
-  <!-- [ CABECERA ] - NAVEGACION Y TITULO               -->
-  <!-- ================================================ -->
+<div class="mx-auto max-w-4xl space-y-6">
   <div class="flex items-center gap-4">
     <app-button
       variant="ghost"
@@ -21,13 +18,35 @@
 
   @if (loading()) {
     <div class="flex min-h-[400px] items-center justify-center">
-      <app-spinner size="lg" label="Cargando información..." />
+      <app-spinner size="lg" label="Cargando informacion..." />
     </div>
   } @else {
     <app-card>
-      <form [formGroup]="form" (ngSubmit)="onSubmit()" class="p-6 space-y-6">
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <!-- Campo: Nombres -->
+      <form [formGroup]="form" (ngSubmit)="onSubmit()" class="space-y-6 p-6">
+        <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
+          @if (isSuperAdmin()) {
+            <div class="space-y-1.5 md:col-span-2">
+              <label class="text-sm font-semibold text-slate-700">Organizacion</label>
+              <div class="relative">
+                <select
+                  formControlName="organization"
+                  class="block w-full appearance-none rounded-xl border border-slate-200 bg-white px-4 py-2.5 pr-10 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                >
+                  <option value="">Selecciona una organizacion</option>
+                  @for (organization of organizations(); track organization._id) {
+                    <option [value]="organization._id">{{ organization.nombre }}</option>
+                  }
+                </select>
+                <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400">
+                  <i class="icon text-lg">expand_more</i>
+                </div>
+              </div>
+              @if (form.get('organization')?.touched && form.get('organization')?.errors?.['required']) {
+                <p class="text-xs font-medium text-red-500">La organizacion es obligatoria para el superadmin.</p>
+              }
+            </div>
+          }
+
           <div class="space-y-1.5">
             <label class="text-sm font-semibold text-slate-700">Nombres</label>
             <app-input
@@ -35,25 +54,23 @@
               placeholder="Ej. Juan Pedro"
             />
             @if (form.get('nombres')?.touched && form.get('nombres')?.errors?.['required']) {
-              <p class="text-xs text-red-500 font-medium">Los nombres son obligatorios.</p>
+              <p class="text-xs font-medium text-red-500">Los nombres son obligatorios.</p>
             }
           </div>
 
-          <!-- Campo: Apellidos -->
           <div class="space-y-1.5">
             <label class="text-sm font-semibold text-slate-700">Apellidos</label>
             <app-input
               formControlName="apellidos"
-              placeholder="Ej. Pérez García"
+              placeholder="Ej. Perez Garcia"
             />
             @if (form.get('apellidos')?.touched && form.get('apellidos')?.errors?.['required']) {
-              <p class="text-xs text-red-500 font-medium">Los apellidos son obligatorios.</p>
+              <p class="text-xs font-medium text-red-500">Los apellidos son obligatorios.</p>
             }
           </div>
 
-          <!-- Campo: Correo -->
           <div class="space-y-1.5">
-            <label class="text-sm font-semibold text-slate-700">Correo Electrónico (Opcional)</label>
+            <label class="text-sm font-semibold text-slate-700">Correo Electronico (Opcional)</label>
             <app-input
               formControlName="correo"
               type="email"
@@ -61,25 +78,24 @@
               icon="mail"
             />
             @if (form.get('correo')?.touched && form.get('correo')?.errors?.['email']) {
-              <p class="text-xs text-red-500 font-medium">Ingresa un formato de correo válido.</p>
+              <p class="text-xs font-medium text-red-500">Ingresa un formato de correo valido.</p>
             }
           </div>
 
-          <!-- Campo: Teléfono -->
           <div class="space-y-1.5">
-            <label class="text-sm font-semibold text-slate-700">Teléfono (Opcional)</label>
+            <label class="text-sm font-semibold text-slate-700">Telefono (Opcional)</label>
             <app-input
               formControlName="numero_telefono"
               placeholder="+51 999 999 999"
               icon="phone"
             />
             @if (form.get('numero_telefono')?.touched && form.get('numero_telefono')?.errors?.['pattern']) {
-              <p class="text-xs text-red-500 font-medium">Ingresa un número válido.</p>
+              <p class="text-xs font-medium text-red-500">Ingresa un numero valido.</p>
             }
           </div>
         </div>
 
-        <div class="flex items-center justify-end gap-3 pt-6 border-t border-slate-100">
+        <div class="flex items-center justify-end gap-3 border-t border-slate-100 pt-6">
           <app-button
             type="button"
             variant="ghost"

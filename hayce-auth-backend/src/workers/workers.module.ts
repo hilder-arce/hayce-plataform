@@ -1,12 +1,16 @@
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
+import { Organization, OrganizationSchema } from 'src/organizations/entities/organization.entity';
 import { Worker, WorkerSchema } from './entities/worker.entity';
 import { WorkersService } from './workers.service';
 import { WorkersResolver } from './workers.resolver';
 
 @Module({
   imports: [
-    MongooseModule.forFeature([{ name: Worker.name, schema: WorkerSchema }]),
+    MongooseModule.forFeature([
+      { name: Worker.name, schema: WorkerSchema },
+      { name: Organization.name, schema: OrganizationSchema },
+    ]),
   ],
   providers: [WorkersService, WorkersResolver],
   exports: [WorkersService],

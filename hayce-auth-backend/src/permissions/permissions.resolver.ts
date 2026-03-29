@@ -14,7 +14,7 @@ export class PermissionsResolver {
   @RequirePermission('crear_permiso')
   createPermission(
     @Args('input') input: CreatePermissionDto,
-    @CurrentUser() user: { nombre?: string },
+    @CurrentUser() user: { sub: string; nombre?: string; esSuperAdmin?: boolean },
   ) {
     return this.permissionsService.create(input, user);
   }
@@ -48,19 +48,26 @@ export class PermissionsResolver {
   updatePermission(
     @Args('id') id: string,
     @Args('input') input: UpdatePermissionDto,
+    @CurrentUser() user: { sub: string; esSuperAdmin?: boolean },
   ) {
-    return this.permissionsService.update(id, input);
+    return this.permissionsService.update(id, input, user);
   }
 
   @Mutation(() => Permission)
   @RequirePermission('eliminar_permiso')
-  removePermission(@Args('id') id: string) {
-    return this.permissionsService.remove(id);
+  removePermission(
+    @Args('id') id: string,
+    @CurrentUser() user: { sub: string; esSuperAdmin?: boolean },
+  ) {
+    return this.permissionsService.removeWithActor(id, user);
   }
 
   @Mutation(() => Permission)
   @RequirePermission('eliminar_permiso')
-  restorePermission(@Args('id') id: string) {
-    return this.permissionsService.restore(id);
+  restorePermission(
+    @Args('id') id: string,
+    @CurrentUser() user: { sub: string; esSuperAdmin?: boolean },
+  ) {
+    return this.permissionsService.restoreWithActor(id, user);
   }
 }

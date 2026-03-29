@@ -22,6 +22,7 @@ interface ShellNavItem {
 
 const SHELL_NAV_METADATA: Record<string, { label: string; icon: string; exact?: boolean }> = {
   '': { label: 'Inicio', icon: 'home', exact: true },
+  organizations: { label: 'Organizaciones', icon: 'apartment' },
   users: { label: 'Usuarios', icon: 'group' },
   roles: { label: 'Roles', icon: 'security' },
   stations: { label: 'Estaciones', icon: 'location_on' },
@@ -100,6 +101,7 @@ export class DashboardShellComponent implements OnInit, OnDestroy {
           permissions,
         } satisfies ShellNavItem;
       })
+      .filter((item) => item.path !== '/dashboard/organizations' || this.currentUser()?.esSuperAdmin)
       .filter((item) => item.permissions.length === 0 || this.authService.hasAllPermissions(item.permissions));
   });
 

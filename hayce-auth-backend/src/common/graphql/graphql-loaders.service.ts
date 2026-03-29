@@ -3,6 +3,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import DataLoader from 'dataloader';
 import { Model } from 'mongoose';
 import { Module as SystemModule } from 'src/modules/entities/module.entity';
+import { Organization } from 'src/organizations/entities/organization.entity';
 import { Permission } from 'src/permissions/entities/permission.entity';
 import { Role } from 'src/roles/entities/role.entity';
 import { User } from 'src/users/entities/user.entity';
@@ -13,6 +14,7 @@ export class GraphqlLoadersService {
   readonly roleById: DataLoader<string, Role | null>;
   readonly permissionById: DataLoader<string, Permission | null>;
   readonly moduleById: DataLoader<string, SystemModule | null>;
+  readonly organizationById: DataLoader<string, Organization | null>;
 
   constructor(
     @InjectModel(User.name) private readonly userModel: Model<User>,
@@ -21,11 +23,14 @@ export class GraphqlLoadersService {
     private readonly permissionModel: Model<Permission>,
     @InjectModel(SystemModule.name)
     private readonly moduleModel: Model<SystemModule>,
+    @InjectModel(Organization.name)
+    private readonly organizationModel: Model<Organization>,
   ) {
     this.userById = this.createLoader(this.userModel);
     this.roleById = this.createLoader(this.roleModel);
     this.permissionById = this.createLoader(this.permissionModel);
     this.moduleById = this.createLoader(this.moduleModel);
+    this.organizationById = this.createLoader(this.organizationModel);
   }
 
   private createLoader<T extends { _id: unknown }>(model: Model<T>) {

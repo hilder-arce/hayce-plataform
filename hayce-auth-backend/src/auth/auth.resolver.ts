@@ -57,24 +57,18 @@ export class AuthResolver {
   }
 
   @Query(() => [Session])
-  async allSessions() {
-    return this.authService.allSessions();
+  async allSessions(@CurrentUser() user: { sub: string; esSuperAdmin?: boolean }) {
+    return this.authService.allSessions(user);
   }
 
   @Mutation(() => MessageResponse)
   async revokeSession(
     @Args('id') id: string,
-    @CurrentUser() user: { sub: string; rol: string },
+    @CurrentUser() user: { sub: string; esSuperAdmin?: boolean },
     @Context('req') req: Request,
     @Context('res') res: Response,
   ) {
-    return this.authService.revokeSession(
-      id,
-      user.sub,
-      user.rol === 'Administrador',
-      req,
-      res,
-    );
+    return this.authService.revokeSession(id, user, req, res);
   }
 
   @Public()
@@ -100,6 +94,9 @@ export class AuthResolver {
     nombre: string;
     email: string;
     rol?: string;
+    organization?: any;
+    ownerAdmin?: any;
+    esSuperAdmin: boolean;
     permisos?: Record<string, string[]>;
     estado: boolean;
     createdAt: Date;

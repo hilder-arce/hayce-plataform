@@ -1,3 +1,5 @@
+import { OrganizationItem } from './organization.models';
+
 // ==========================================
 // [ ENTIDAD PRINCIPAL ] - USUARIO AUTENTICADO
 // ==========================================
@@ -10,6 +12,13 @@ export interface AuthUser {
   permisos: Record<string, string[]>;
   estado: boolean;
   createdAt: string;
+  esSuperAdmin: boolean;
+  organization?: OrganizationItem | null;
+  ownerAdmin?: {
+    _id: string;
+    nombre: string;
+    email?: string;
+  } | null;
 }
 
 // ==========================================

@@ -15,9 +15,6 @@ import { GraphqlApiService } from './graphql-api.service';
 export class WorkersService {
   private readonly graphql = inject(GraphqlApiService);
 
-  // ==========================================
-  // [ GET ] - LISTADO DE TRABAJADORES ACTIVOS O INACTIVOS
-  // ==========================================
   getWorkers(includeInactive = false): Observable<AppWorkerItem[]> {
     const operation = includeInactive ? 'inactiveWorkers' : 'workers';
     return this.graphql
@@ -33,16 +30,28 @@ export class WorkersService {
               estado
               createdAt
               updatedAt
+              organization {
+                id
+                nombre
+                slug
+                estado
+              }
+              createdBy {
+                id
+                nombre
+                email
+              }
             }
           }
         `,
       )
-      .pipe(map((response) => (response[operation] ?? []).map((worker) => this.mapWorker(worker))));
+      .pipe(
+        map((response) =>
+          (response[operation] ?? []).map((worker) => this.mapWorker(worker)),
+        ),
+      );
   }
 
-  // ==========================================
-  // [ GET ] - OBTENER UN TRABAJADOR POR IDENTIFICADOR
-  // ==========================================
   getWorkerById(id: string, inactive = false): Observable<AppWorkerItem> {
     const operation = inactive ? 'inactiveWorker' : 'worker';
     return this.graphql
@@ -58,17 +67,29 @@ export class WorkersService {
               estado
               createdAt
               updatedAt
+              organization {
+                id
+                nombre
+                slug
+                estado
+              }
+              createdBy {
+                id
+                nombre
+                email
+              }
             }
           }
         `,
         { id },
       )
-      .pipe(map((response) => this.mapWorker((response[operation] as WorkerGraphql)!)));
+      .pipe(
+        map((response) =>
+          this.mapWorker((response[operation] as WorkerGraphql)!),
+        ),
+      );
   }
 
-  // ==========================================
-  // [ POST ] - CREAR UN NUEVO TRABAJADOR
-  // ==========================================
   createWorker(payload: CreateWorkerPayload): Observable<AppWorkerItem> {
     return this.graphql
       .mutate<{ createWorker: WorkerGraphql }>(
@@ -83,6 +104,17 @@ export class WorkersService {
               estado
               createdAt
               updatedAt
+              organization {
+                id
+                nombre
+                slug
+                estado
+              }
+              createdBy {
+                id
+                nombre
+                email
+              }
             }
           }
         `,
@@ -91,10 +123,10 @@ export class WorkersService {
       .pipe(map((response) => this.mapWorker(response.createWorker)));
   }
 
-  // ==========================================
-  // [ PATCH ] - ACTUALIZAR UN TRABAJADOR EXISTENTE
-  // ==========================================
-  updateWorker(id: string, payload: UpdateWorkerPayload): Observable<AppWorkerItem> {
+  updateWorker(
+    id: string,
+    payload: UpdateWorkerPayload,
+  ): Observable<AppWorkerItem> {
     return this.graphql
       .mutate<{ updateWorker: WorkerGraphql }>(
         `
@@ -108,6 +140,17 @@ export class WorkersService {
               estado
               createdAt
               updatedAt
+              organization {
+                id
+                nombre
+                slug
+                estado
+              }
+              createdBy {
+                id
+                nombre
+                email
+              }
             }
           }
         `,
@@ -116,9 +159,6 @@ export class WorkersService {
       .pipe(map((response) => this.mapWorker(response.updateWorker)));
   }
 
-  // ==========================================
-  // [ DELETE ] - DESACTIVAR UN TRABAJADOR
-  // ==========================================
   deleteWorker(id: string): Observable<AppWorkerItem> {
     return this.graphql
       .mutate<{ removeWorker: WorkerGraphql }>(
@@ -126,7 +166,24 @@ export class WorkersService {
           mutation RemoveWorker($id: String!) {
             removeWorker(id: $id) {
               id
+              nombres
+              apellidos
+              numero_telefono
+              correo
               estado
+              createdAt
+              updatedAt
+              organization {
+                id
+                nombre
+                slug
+                estado
+              }
+              createdBy {
+                id
+                nombre
+                email
+              }
             }
           }
         `,
@@ -135,9 +192,6 @@ export class WorkersService {
       .pipe(map((response) => this.mapWorker(response.removeWorker)));
   }
 
-  // ==========================================
-  // [ PATCH ] - RESTAURAR UN TRABAJADOR INACTIVO
-  // ==========================================
   restoreWorker(id: string): Observable<AppWorkerItem> {
     return this.graphql
       .mutate<{ restoreWorker: WorkerGraphql }>(
@@ -145,7 +199,24 @@ export class WorkersService {
           mutation RestoreWorker($id: String!) {
             restoreWorker(id: $id) {
               id
+              nombres
+              apellidos
+              numero_telefono
+              correo
               estado
+              createdAt
+              updatedAt
+              organization {
+                id
+                nombre
+                slug
+                estado
+              }
+              createdBy {
+                id
+                nombre
+                email
+              }
             }
           }
         `,
@@ -164,6 +235,21 @@ export class WorkersService {
       estado: worker.estado,
       createdAt: worker.createdAt,
       updatedAt: worker.updatedAt,
+      organization: worker.organization
+        ? {
+            _id: worker.organization.id,
+            nombre: worker.organization.nombre,
+            slug: worker.organization.slug,
+            estado: worker.organization.estado,
+          }
+        : null,
+      createdBy: worker.createdBy
+        ? {
+            _id: worker.createdBy.id,
+            nombre: worker.createdBy.nombre,
+            email: worker.createdBy.email,
+          }
+        : null,
     };
   }
 }
@@ -177,4 +263,15 @@ interface WorkerGraphql {
   estado: boolean;
   createdAt?: string;
   updatedAt?: string;
+  organization?: {
+    id: string;
+    nombre: string;
+    slug: string;
+    estado: boolean;
+  } | null;
+  createdBy?: {
+    id: string;
+    nombre: string;
+    email?: string;
+  } | null;
 }

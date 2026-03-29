@@ -1,6 +1,8 @@
 import { Field, ID, ObjectType } from '@nestjs/graphql';
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Document } from 'mongoose';
+import { Document, Types } from 'mongoose';
+import { Organization } from 'src/organizations/entities/organization.entity';
+import { User } from 'src/users/entities/user.entity';
 
 @Schema({
   timestamps: true,
@@ -12,7 +14,7 @@ export class Station extends Document {
     return this._id?.toString?.() ?? '';
   }
 
-  @Prop({ required: true, unique: true })
+  @Prop({ required: true })
   @Field()
   nombre: string;
 
@@ -24,6 +26,14 @@ export class Station extends Document {
   @Field()
   estado: boolean;
 
+  @Prop({ type: Types.ObjectId, ref: 'Organization', required: true })
+  @Field(() => Organization, { nullable: true })
+  organization: Types.ObjectId;
+
+  @Prop({ type: Types.ObjectId, ref: 'User', required: true })
+  @Field(() => User, { nullable: true })
+  createdBy: Types.ObjectId;
+
   @Field()
   createdAt: Date;
 
@@ -32,3 +42,7 @@ export class Station extends Document {
 }
 
 export const StationSchema = SchemaFactory.createForClass(Station);
+StationSchema.index(
+  { organization: 1, nombre: 1 },
+  { unique: true, partialFilterExpression: { organization: { $exists: true } } },
+);

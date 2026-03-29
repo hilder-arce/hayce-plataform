@@ -9,6 +9,10 @@ import {
   Permission,
   PermissionSchema,
 } from 'src/permissions/entities/permission.entity';
+import {
+  Organization,
+  OrganizationSchema,
+} from 'src/organizations/entities/organization.entity';
 import { Role, RoleSchema } from 'src/roles/entities/role.entity';
 import { User, UserSchema } from 'src/users/entities/user.entity';
 
@@ -20,6 +24,7 @@ import { User, UserSchema } from 'src/users/entities/user.entity';
       { name: Role.name, schema: RoleSchema },
       { name: Permission.name, schema: PermissionSchema },
       { name: SystemModule.name, schema: ModuleSchema },
+      { name: Organization.name, schema: OrganizationSchema },
     ]),
   ],
   providers: [GraphqlLoadersService],

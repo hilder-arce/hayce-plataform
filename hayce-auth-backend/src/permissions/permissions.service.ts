@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
+import { AccessActor } from 'src/auth/authorization/access-control.service';
 
 import { CreatePermissionDto } from './dto/create-permission.dto';
 import { UpdatePermissionDto } from './dto/update-permission.dto';
@@ -30,8 +31,14 @@ export class PermissionsService {
   // ======================================================
   async create(
     createPermissionDto: CreatePermissionDto,
-    creadoPor: any,
+    creadoPor: AccessActor,
   ): Promise<Permission> {
+    if (!creadoPor?.esSuperAdmin) {
+      throw new ForbiddenException(
+        'Solo el superadmin puede crear permisos globales',
+      );
+    }
+
     // 1. VALIDACIÓN DE EXISTENCIA Y ESTADO DEL MÓDULO ASOCIADO
     const module = await this.findOnemodule(createPermissionDto.modulo);
 
@@ -94,7 +101,14 @@ export class PermissionsService {
   async update(
     id: string,
     updatePermissionDto: UpdatePermissionDto,
+    actor?: AccessActor,
   ): Promise<Permission> {
+    if (!actor?.esSuperAdmin) {
+      throw new ForbiddenException(
+        'Solo el superadmin puede actualizar permisos globales',
+      );
+    }
+
     const permission = await this.findOne(id);
     const moduloId = this.extractModuleId(permission);
 
@@ -113,6 +127,16 @@ export class PermissionsService {
   // [ DELETE ] - DESACTIVACIÓN LÓGICA DE PERMISO
   // ======================================================
   async remove(id: string): Promise<Permission> {
+    throw new ForbiddenException('Debes enviar el contexto del usuario actual');
+  }
+
+  async removeWithActor(id: string, actor: AccessActor): Promise<Permission> {
+    if (!actor?.esSuperAdmin) {
+      throw new ForbiddenException(
+        'Solo el superadmin puede desactivar permisos globales',
+      );
+    }
+
     const permission = await this.findOne(id);
     const moduloId = this.extractModuleId(permission);
 
@@ -141,6 +165,16 @@ export class PermissionsService {
   // [ RESTORE ] - REACTIVACIÓN DE PERMISO ELIMINADO
   // ======================================================
   async restore(id: string): Promise<Permission> {
+    throw new ForbiddenException('Debes enviar el contexto del usuario actual');
+  }
+
+  async restoreWithActor(id: string, actor: AccessActor): Promise<Permission> {
+    if (!actor?.esSuperAdmin) {
+      throw new ForbiddenException(
+        'Solo el superadmin puede restaurar permisos globales',
+      );
+    }
+
     const permission = await this.permissionModel
       .findById(id)
       .select('-__v')

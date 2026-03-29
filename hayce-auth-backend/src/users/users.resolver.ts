@@ -19,37 +19,50 @@ export class UsersResolver {
   @RequirePermission('crear_usuario')
   createUser(
     @Args('input') input: CreateUserDto,
-    @CurrentUser() user: { nombre: string },
+    @CurrentUser() user: { sub: string; nombre?: string; esSuperAdmin?: boolean },
   ) {
-    return this.usersService.create(input, user.nombre);
+    return this.usersService.create(input, user);
   }
 
   @Query(() => UsersPage)
   @RequirePermission('listar_usuarios')
-  users(@Args() args: PaginationArgs) {
-    return this.usersService.findAll(args.page, args.limit, args.search ?? '');
+  users(
+    @Args() args: PaginationArgs,
+    @CurrentUser() user: { sub: string; esSuperAdmin?: boolean },
+  ) {
+    return this.usersService.findAll(args.page, args.limit, args.search ?? '', user);
   }
 
   @Query(() => UsersPage)
   @RequirePermission('listar_usuarios')
-  inactiveUsers(@Args() args: PaginationArgs) {
+  inactiveUsers(
+    @Args() args: PaginationArgs,
+    @CurrentUser() user: { sub: string; esSuperAdmin?: boolean },
+  ) {
     return this.usersService.findAllInactive(
       args.page,
       args.limit,
       args.search ?? '',
+      user,
     );
   }
 
   @Query(() => User)
   @RequirePermission('listar_usuarios')
-  user(@Args('id') id: string) {
-    return this.usersService.findOne(id);
+  user(
+    @Args('id') id: string,
+    @CurrentUser() user: { sub: string; esSuperAdmin?: boolean },
+  ) {
+    return this.usersService.findOne(id, user);
   }
 
   @Query(() => User)
   @RequirePermission('listar_usuarios')
-  inactiveUser(@Args('id') id: string) {
-    return this.usersService.findOneInactive(id);
+  inactiveUser(
+    @Args('id') id: string,
+    @CurrentUser() user: { sub: string; esSuperAdmin?: boolean },
+  ) {
+    return this.usersService.findOneInactive(id, user);
   }
 
   @Mutation(() => User)
@@ -73,21 +86,27 @@ export class UsersResolver {
   updateUser(
     @Args('id') id: string,
     @Args('input') input: UpdateUserDto,
-    @CurrentUser() user: { nombre?: string },
+    @CurrentUser() user: { sub: string; nombre?: string; esSuperAdmin?: boolean },
   ) {
-    return this.usersService.update(id, input, user?.nombre);
+    return this.usersService.update(id, input, user);
   }
 
   @Mutation(() => User)
   @RequirePermission('eliminar_usuario')
-  restoreUser(@Args('id') id: string) {
-    return this.usersService.reactivate(id);
+  restoreUser(
+    @Args('id') id: string,
+    @CurrentUser() user: { sub: string; esSuperAdmin?: boolean },
+  ) {
+    return this.usersService.reactivate(id, user);
   }
 
   @Mutation(() => User)
   @RequirePermission('eliminar_usuario')
-  removeUser(@Args('id') id: string) {
-    return this.usersService.remove(id);
+  removeUser(
+    @Args('id') id: string,
+    @CurrentUser() user: { sub: string; esSuperAdmin?: boolean },
+  ) {
+    return this.usersService.remove(id, user);
   }
 
   @Mutation(() => MessageResponse)
@@ -95,7 +114,8 @@ export class UsersResolver {
   adminChangePassword(
     @Args('id') id: string,
     @Args('input') input: AdminChangePasswordDto,
+    @CurrentUser() user: { sub: string; esSuperAdmin?: boolean },
   ) {
-    return this.usersService.adminChangePassword(id, input);
+    return this.usersService.adminChangePassword(id, input, user);
   }
 }

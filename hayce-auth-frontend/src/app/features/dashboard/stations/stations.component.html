@@ -1,10 +1,7 @@
-<!-- ================================================ -->
-<!-- [ PAGE HEADER ] - TITULO Y ACCION PRINCIPAL      -->
-<!-- ================================================ -->
 <div class="mb-6 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
   <div class="space-y-2">
     <h1 class="font-body text-3xl font-semibold tracking-tight text-slate-900 sm:text-[2rem]">
-      Gestión de Estaciones
+      Gesti&oacute;n de Estaciones
     </h1>
     <p class="max-w-2xl text-sm leading-6 text-slate-500 sm:text-base">
       Administra las estaciones operativas del sistema.
@@ -18,21 +15,17 @@
         icon="add"
         [routerLink]="['/dashboard/stations/new']"
       >
-        Nueva Estación
+        Nueva Estaci&oacute;n
       </app-button>
     </div>
   }
-
 </div>
 
-<!-- ================================================ -->
-<!-- [ FILTERS ] - BUSQUEDA Y ESTADO                  -->
-<!-- ================================================ -->
 <div class="mb-6 rounded-3xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
   <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
     <div class="w-full md:max-w-sm">
       <app-input
-        placeholder="Buscar estaciones..."
+        placeholder="Buscar estaciones, organizacion o creador..."
         icon="search"
         [ngModel]="searchTerm()"
         (ngModelChange)="onSearch($event)"
@@ -59,7 +52,7 @@
               size="sm"
               [routerLink]="['/dashboard/stations/new']"
             >
-              Nueva Estación
+              Nueva Estaci&oacute;n
             </app-button>
           </div>
         }
@@ -73,18 +66,20 @@
   </div>
 </div>
 
-<!-- ================================================ -->
-<!-- [ STATIONS TABLE ] - LISTADO PRINCIPAL           -->
-<!-- ================================================ -->
 <app-card [noPadding]="true">
   <div class="overflow-x-auto">
     <table class="min-w-max w-full text-left text-sm text-slate-600">
       <thead class="bg-slate-50 text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
         <tr>
-          <th class="px-6 py-4">Estación</th>
-          <th class="px-6 py-4">Descripción</th>
+          <th class="pl-6">#</th>
+          <th class="px-6 py-4">Estaci&oacute;n</th>
+          @if (isSuperAdmin()) {
+            <th class="px-6 py-4">Organizacion</th>
+          }
+          <th class="px-6 py-4">Creada por</th>
+          <th class="px-6 py-4">Descripci&oacute;n</th>
           <th class="px-6 py-4">Estado</th>
-          <th class="px-6 py-4">Fecha alta</th>
+          <th class="px-6 py-4">Creado el</th>
           <th class="px-6 py-4 text-right">Acciones</th>
         </tr>
       </thead>
@@ -92,7 +87,7 @@
       <tbody class="divide-y divide-slate-200">
         @if (loading()) {
           <tr>
-            <td colspan="5" class="px-6 py-12 text-center">
+            <td [attr.colspan]="isSuperAdmin() ? 7 : 6" class="px-6 py-12 text-center">
               <div class="flex flex-col items-center justify-center gap-3 text-slate-500">
                 <app-spinner size="lg" />
                 <p>Cargando estaciones...</p>
@@ -101,7 +96,7 @@
           </tr>
         } @else if (filteredStations().length === 0) {
           <tr>
-            <td colspan="5" class="px-6 py-16 text-center">
+            <td [attr.colspan]="isSuperAdmin() ? 7 : 6" class="px-6 py-16 text-center">
               <div class="flex flex-col items-center justify-center gap-4 text-center">
                 <div class="flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-100 text-slate-500">
                   <i class="icon text-3xl">home_work</i>
@@ -111,21 +106,24 @@
                     No se encontraron estaciones
                   </h3>
                   <p class="max-w-xl text-sm leading-6 text-slate-500">
-                    Prueba otro filtro o crea una nueva estación.
+                    Prueba otro filtro o crea una nueva estaci&oacute;n.
                   </p>
                 </div>
 
                 @if (canCreate) {
                   <app-button variant="outline" [routerLink]="['/dashboard/stations/new']">
-                    Crear mi primera estación
+                    Crear mi primera estaci&oacute;n
                   </app-button>
                 }
               </div>
             </td>
           </tr>
         } @else {
-          @for (station of filteredStations(); track station._id) {
+          @for (station of paginatedStations(); track station._id; let i = $index) {
             <tr class="transition-colors hover:bg-slate-50/80">
+              <td class="px-6 py-4">
+                <span class="text-sm font-semibold text-slate-500">{{ i + 1 }}</span>
+              </td>
               <td class="px-6 py-4">
                 <div class="flex items-center gap-3">
                   <div class="flex h-10 w-10 items-center justify-center rounded-2xl bg-blue-50 text-blue-600">
@@ -137,9 +135,22 @@
                 </div>
               </td>
 
+              @if (isSuperAdmin()) {
+                <td class="px-6 py-4">
+                  <div class="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-medium text-slate-700">
+                    <i class="icon text-sm text-slate-500">apartment</i>
+                    <span>{{ station.organization?.nombre || 'Sin organizacion' }}</span>
+                  </div>
+                </td>
+              }
+
+              <td class="px-6 py-4 text-xs font-medium text-slate-500">
+                {{ station.createdBy?.nombre || 'Sistema' }}
+              </td>
+
               <td class="px-6 py-4">
                 <p class="max-w-xs leading-6 text-slate-500">
-                  {{ station.descripcion || 'Sin descripción registrada.' }}
+                  {{ station.descripcion || 'Sin descripci&oacute;n registrada.' }}
                 </p>
               </td>
 
@@ -192,5 +203,39 @@
         }
       </tbody>
     </table>
+  </div>
+
+  <div footer class="flex w-full flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+    <div class="text-sm text-slate-500">
+      Mostrando
+      <span class="font-semibold text-slate-900">{{ paginatedStations().length }}</span>
+      de
+      <span class="font-semibold text-slate-900">{{ filteredStations().length }}</span>
+      estaciones
+    </div>
+
+    <div class="flex items-center justify-between gap-3 sm:justify-end">
+      <app-button
+        variant="ghost"
+        size="sm"
+        [disabled]="currentPage() === 1"
+        (onClick)="changePage(currentPage() - 1)"
+      >
+        Anterior
+      </app-button>
+
+      <div class="min-w-[4.5rem] text-center text-sm font-medium text-slate-700">
+        {{ currentPage() }} / {{ totalPages() }}
+      </div>
+
+      <app-button
+        variant="ghost"
+        size="sm"
+        [disabled]="currentPage() >= totalPages()"
+        (onClick)="changePage(currentPage() + 1)"
+      >
+        Siguiente
+      </app-button>
+    </div>
   </div>
 </app-card>

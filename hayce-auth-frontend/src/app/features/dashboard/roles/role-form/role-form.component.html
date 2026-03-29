@@ -69,6 +69,31 @@
             />
           </div>
 
+          @if (isSuperAdmin()) {
+            <div>
+              <label for="organization" class="mb-1.5 block text-sm font-medium text-slate-700">
+                Organización
+              </label>
+
+              <div class="relative">
+                <select
+                  id="organization"
+                  formControlName="organization"
+                  class="block w-full appearance-none rounded-xl border border-slate-200 bg-white px-4 py-2.5 pr-10 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                >
+                  <option value="" disabled>Selecciona una organización</option>
+                  <option *ngFor="let organization of organizations()" [value]="organization._id">
+                    {{ organization.nombre }}
+                  </option>
+                </select>
+
+                <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400">
+                  <i class="icon text-lg">expand_more</i>
+                </div>
+              </div>
+            </div>
+          }
+
           <div class="md:col-span-2">
             <label for="descripcion" class="mb-1.5 block text-sm font-medium text-slate-700">
               Descripcion operativa

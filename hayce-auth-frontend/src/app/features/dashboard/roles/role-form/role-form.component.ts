@@ -14,7 +14,10 @@ import { EMPTY, Observable } from 'rxjs';
 import { finalize, switchMap } from 'rxjs/operators';
 
 import { AlertService } from '../../../../core/services/alert.service';
+import { AuthService } from '../../../../core/services/auth.service';
+import { OrganizationItem } from '../../../../core/models/organization.models';
 import { PermissionsService } from '../../../../core/services/permissions.service';
+import { OrganizationsService } from '../../../../core/services/organizations.service';
 import { RolesService } from '../../../../core/services/roles.service';
 import { AppPermission } from '../../../../core/models/permission.models';
 import { CreateRolePayload, Role, UpdateRolePayload } from '../../../../core/models/role.models';
@@ -26,6 +29,7 @@ import { SpinnerComponent } from '../../../../shared/components/spinner/spinner.
 type RoleFormGroup = FormGroup<{
   nombre: FormControl<string>;
   descripcion: FormControl<string>;
+  organization: FormControl<string>;
   permisos: FormControl<string[]>;
 }>;
 
@@ -53,7 +57,9 @@ export class RoleFormComponent {
   private readonly router = inject(Router);
   private readonly rolesService = inject(RolesService);
   private readonly permissionsService = inject(PermissionsService);
+  private readonly organizationsService = inject(OrganizationsService);
   private readonly alertService = inject(AlertService);
+  private readonly authService = inject(AuthService);
 
   // ==========================================
   // [ ESTADO ] - FORMULARIO Y SIGNALS
@@ -62,6 +68,7 @@ export class RoleFormComponent {
   protected readonly permissionsLoading = signal(true);
   protected readonly isEditMode = signal(false);
   protected readonly permissions = signal<AppPermission[]>([]);
+  protected readonly organizations = signal<OrganizationItem[]>([]);
   protected readonly permissionSearch = signal('');
   protected roleId: string | null = null;
   private originalPermissionIds = new Set<string>();
@@ -71,6 +78,7 @@ export class RoleFormComponent {
     nombre: ['', [Validators.required, Validators.minLength(3)]],
     // Descripcion operativa: requerido y minimo 10 caracteres
     descripcion: ['', [Validators.required, Validators.minLength(10)]],
+    organization: [''],
     // Relacion con permisos: lista de ids seleccionados
     permisos: [[] as string[]],
   });
@@ -84,6 +92,9 @@ export class RoleFormComponent {
   // ==========================================
   ngOnInit(): void {
     this.loadPermissions();
+    if (this.isSuperAdmin()) {
+      this.loadOrganizations();
+    }
 
     this.route.paramMap
       .pipe(
@@ -108,6 +119,7 @@ export class RoleFormComponent {
           this.roleForm.patchValue({
             nombre: role.nombre,
             descripcion: role.descripcion ?? '',
+            organization: role.organization?._id ?? '',
             permisos: permissionIds,
           });
           this.loading.set(false);
@@ -124,9 +136,16 @@ export class RoleFormComponent {
       .getPermissions(false)
       .pipe(finalize(() => this.permissionsLoading.set(false)))
       .subscribe({
-        next: (permissions) => this.permissions.set(permissions),
+        next: (permissions) => this.permissions.set(this.filterAssignablePermissions(permissions)),
         error: () => this.alertService.show('No se pudieron cargar los permisos activos.', 'error'),
       });
+  }
+
+  private loadOrganizations(): void {
+    this.organizationsService.getOrganizations().subscribe({
+      next: (organizations) => this.organizations.set(organizations),
+      error: () => this.alertService.show('No se pudieron cargar las organizaciones.', 'error'),
+    });
   }
 
   // ==========================================
@@ -176,6 +195,10 @@ export class RoleFormComponent {
     return null;
   }
 
+  protected isSuperAdmin(): boolean {
+    return !!this.authService.currentUser()?.esSuperAdmin;
+  }
+
   // ==========================================
   // [ ACCIONES ] - EVENTOS DE UI
   // ==========================================
@@ -210,6 +233,12 @@ export class RoleFormComponent {
 
     this.loading.set(true);
     const selectedPermissions = this.roleForm.controls.permisos.value ?? [];
+    if (this.isSuperAdmin() && !this.roleForm.controls.organization.value) {
+      this.roleForm.controls.organization.markAsTouched();
+      this.loading.set(false);
+      return;
+    }
+
     const request = this.isEditMode()
       ? this.rolesService.updateRole(this.roleId!, this.buildUpdatePayload(selectedPermissions))
       : this.rolesService.createRole(this.buildCreatePayload(selectedPermissions));
@@ -242,6 +271,7 @@ export class RoleFormComponent {
       nombre: this.roleForm.controls.nombre.value,
       descripcion: this.roleForm.controls.descripcion.value,
       permisos: selectedPermissions,
+      organization: this.isSuperAdmin() ? this.roleForm.controls.organization.value : undefined,
     };
   }
 
@@ -255,5 +285,18 @@ export class RoleFormComponent {
       permisos: added,
       permisosEliminar: removed,
     };
+  }
+
+  private filterAssignablePermissions(permissions: AppPermission[]): AppPermission[] {
+    const user = this.authService.currentUser();
+    if (!user || user.esSuperAdmin) {
+      return permissions;
+    }
+
+    const grantedPermissions = new Set(
+      Object.values(user.permisos ?? {}).flat(),
+    );
+
+    return permissions.filter((permission) => grantedPermissions.has(permission.nombre));
   }
 }
