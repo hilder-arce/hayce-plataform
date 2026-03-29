@@ -1,7 +1,6 @@
-<div class="mx-auto grid w-full max-w-7xl gap-6">
-  <!-- ================================================ -->
-  <!-- [ CELEBRACION ] - ACTUALIZACION DE CARGO         -->
-  <!-- ================================================ -->
+<div class="mx-auto w-full max-w-5xl px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+
+  <!-- CELEBRACION -->
   @if (roleCelebration(); as celebration) {
     <section class="flex flex-col gap-4 rounded-3xl border border-blue-200 bg-gradient-to-b from-blue-50 to-white p-4 shadow-sm sm:flex-row sm:items-start sm:justify-between sm:p-5">
       <div class="min-w-0">
@@ -11,121 +10,82 @@
         <h2 class="mt-3 text-xl font-semibold tracking-tight text-slate-900 sm:text-2xl">
           {{ celebration.title }}
         </h2>
-        <p class="mt-2 max-w-3xl text-sm leading-6 text-slate-600 sm:text-base">
+        <p class="mt-2 max-w-2xl text-sm leading-6 text-slate-600 sm:text-base">
           {{ celebration.body }}
         </p>
       </div>
 
       <button
         type="button"
-        class="inline-flex h-10 w-10 items-center justify-center self-end rounded-2xl border border-blue-200 bg-white text-slate-500 transition-colors hover:bg-slate-50 hover:text-slate-900 sm:self-auto"
+        class="inline-flex h-10 w-10 items-center justify-center self-end rounded-2xl border border-blue-200 bg-white text-slate-500 hover:bg-slate-50"
         (click)="dismissRoleCelebration()"
-        aria-label="Cerrar mensaje"
       >
         <i class="icon text-lg">close</i>
       </button>
     </section>
   }
 
-  <!-- ================================================ -->
-  <!-- [ CABECERA ] - BIENVENIDA Y RESUMEN              -->
-  <!-- ================================================ -->
-  <section class="grid gap-4 xl:grid-cols-[minmax(0,1.6fr)_minmax(18rem,0.85fr)]">
-    <div class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
-      <span class="inline-flex rounded-full bg-blue-50 px-3 py-1 text-[0.68rem] font-semibold uppercase tracking-[0.14em] text-blue-700">
-        Inicio
-      </span>
-      <h1 class="mt-4 text-3xl font-semibold tracking-tight text-slate-900 sm:text-4xl">
-        {{ getGreeting() }}, {{ currentUser()?.nombre }}
-      </h1>
-      <p class="mt-3 max-w-2xl text-sm leading-6 text-slate-500 sm:text-base">
-        Accede a las secciones principales del sistema desde un panel limpio y directo.
-      </p>
-    </div>
-
-    <div class="grid gap-3">
-      <div class="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
-        <span class="block text-[0.72rem] font-semibold uppercase tracking-[0.14em] text-slate-400">Rol</span>
-        <strong class="mt-2 block text-lg font-semibold text-slate-900">{{ currentUser()?.rol }}</strong>
-      </div>
-
-      <div class="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
-        <span class="block text-[0.72rem] font-semibold uppercase tracking-[0.14em] text-slate-400">Fecha</span>
-        <strong class="mt-2 block text-lg font-semibold text-slate-900">{{ getTodayLabel() }}</strong>
-      </div>
-
-      <div class="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
-        <span class="block text-[0.72rem] font-semibold uppercase tracking-[0.14em] text-slate-400">Accesos</span>
-        <strong class="mt-2 block text-lg font-semibold text-slate-900">{{ quickActions.length }} disponibles</strong>
-      </div>
-    </div>
-  </section>
-
-  <!-- ================================================ -->
-  <!-- [ ENCABEZADO ] - ACCESOS RAPIDOS                 -->
-  <!-- ================================================ -->
+  <!-- HEADER -->
   <section class="flex flex-col gap-2">
-    <h2 class="text-2xl font-semibold tracking-tight text-slate-900 sm:text-3xl">Accesos rápidos</h2>
-    <p class="text-sm text-slate-500 sm:text-base">Selecciona una acción para continuar.</p>
+
+    <p class="text-sm text-slate-500">
+      {{ getGreeting() }}, {{ currentUser()?.nombre }}
+    </p>
+
+    <h1 class="text-3xl sm:text-4xl font-semibold text-slate-900">
+      ¿Empezamos?
+    </h1>
+
+    <p class="text-sm sm:text-base text-slate-500 max-w-md">
+      Accede rápidamente a las funciones principales del sistema.
+    </p>
+
   </section>
 
-  <!-- ================================================ -->
-  <!-- [ ACCIONES ] - TARJETAS DE NAVEGACION            -->
-  <!-- ================================================ -->
-  <section class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+  <!-- ACTIONS -->
+  <div class="
+    flex flex-wrap gap-3
+    sm:grid sm:grid-cols-2
+    lg:grid-cols-3
+  ">
+
     <button
       *ngFor="let action of quickActions"
-      type="button"
-      class="group flex min-h-40 rounded-3xl border border-slate-200 bg-white p-4 text-left shadow-sm transition hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-md sm:p-5"
       (click)="goTo(action.route)"
+      class="
+        group inline-flex items-center gap-3
+        w-auto sm:w-full
+        rounded-full sm:rounded-xl
+        border border-slate-200 bg-white
+        px-4 py-2 sm:px-4 sm:py-4
+        transition hover:border-slate-300 hover:shadow-sm
+      "
     >
-      <div class="grid w-full grid-cols-[auto_1fr_auto] gap-4">
-        <div
-          class="inline-flex h-12 w-12 items-center justify-center rounded-2xl"
-          [ngClass]="{
-            'bg-blue-50 text-blue-700': action.colorClass === 'blue',
-            'bg-green-50 text-green-700': action.colorClass === 'green',
-            'bg-orange-50 text-orange-700': action.colorClass === 'orange',
-            'bg-violet-50 text-violet-700': action.colorClass === 'purple',
-            'bg-red-50 text-red-700': action.colorClass === 'red',
-            'bg-slate-100 text-slate-700': action.colorClass === 'gray'
-          }"
-        >
-          <i class="icon text-[1.35rem]">{{ action.icon }}</i>
-        </div>
 
-        <div class="min-w-0">
-          <h3 class="text-base font-semibold text-slate-900">{{ action.label }}</h3>
-          <p class="mt-2 text-sm leading-6 text-slate-500">{{ action.hint }}</p>
-        </div>
-
-        <i class="icon hidden self-center text-xl text-slate-300 transition group-hover:text-slate-600 sm:inline-flex">
-          chevron_right
-        </i>
+      <div
+        class="flex items-center justify-center h-8 w-8 sm:h-12 sm:w-12 rounded-full sm:rounded-lg shrink-0"
+        [ngClass]="{
+          'bg-blue-50 text-blue-600': action.colorClass === 'blue',
+          'bg-green-50 text-green-600': action.colorClass === 'green',
+          'bg-orange-50 text-orange-600': action.colorClass === 'orange',
+          'bg-violet-50 text-violet-600': action.colorClass === 'purple',
+          'bg-red-50 text-red-600': action.colorClass === 'red',
+          'bg-slate-100 text-slate-600': action.colorClass === 'gray'
+        }"
+      >
+        <i class="icon text-base sm:text-xl">{{ action.icon }}</i>
       </div>
+
+      <span class="text-sm sm:text-base font-medium text-slate-900 whitespace-nowrap">
+        {{ action.label }}
+      </span>
+
+      <i class="icon hidden sm:inline-flex ml-auto text-slate-300">
+        chevron_right
+      </i>
+
     </button>
 
-    <button
-      type="button"
-      class="group flex min-h-40 rounded-3xl border border-slate-200 bg-white p-4 text-left shadow-sm transition hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-md sm:p-5"
-      (click)="goTo('/dashboard/help')"
-    >
-      <div class="grid w-full grid-cols-[auto_1fr_auto] gap-4">
-        <div class="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-100 text-slate-700">
-          <i class="icon text-[1.35rem]">help_outline</i>
-        </div>
+  </div>
 
-        <div class="min-w-0">
-          <h3 class="text-base font-semibold text-slate-900">Centro de ayuda</h3>
-          <p class="mt-2 text-sm leading-6 text-slate-500">
-            Consulta guías y referencias de uso de la plataforma.
-          </p>
-        </div>
-
-        <i class="icon hidden self-center text-xl text-slate-300 transition group-hover:text-slate-600 sm:inline-flex">
-          chevron_right
-        </i>
-      </div>
-    </button>
-  </section>
 </div>
