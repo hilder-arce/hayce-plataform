@@ -172,13 +172,6 @@ export class DashboardHomeComponent implements OnInit {
         route: '/dashboard/account',
         colorClass: 'gray',
       },
-      {
-        label: 'Cambiar Contraseña',
-        icon: 'lock_reset',
-        hint: 'Reforzar la seguridad de la cuenta con una nueva clave.',
-        route: '/dashboard/account',
-        colorClass: 'gray',
-      },
     ];
 
     return baseActions.filter(
