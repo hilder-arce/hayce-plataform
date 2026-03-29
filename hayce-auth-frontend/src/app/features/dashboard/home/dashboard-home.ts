@@ -90,7 +90,7 @@ export class DashboardHomeComponent implements OnInit {
 
   protected getGreeting(): string {
     const hour = this.today.getHours();
-
+    
     if (hour < 12) return 'Buenos días';
     if (hour < 19) return 'Buenas tardes';
     return 'Buenas noches';
@@ -102,20 +102,11 @@ export class DashboardHomeComponent implements OnInit {
   private buildQuickActions(): QuickAction[] {
     const baseActions: QuickAction[] = [
       {
-        label: 'Crear Usuario',
-        icon: 'person_add',
-        hint: 'Registrar una nueva cuenta de acceso en la plataforma.',
-        route: '/dashboard/users/new',
-        requiredPermission: 'crear_usuario',
-        colorClass: 'purple',
-      },
-      {
-        label: 'Administrar Usuarios',
-        icon: 'manage_accounts',
-        hint: 'Revisar estados, roles y datos de los usuarios existentes.',
-        route: '/dashboard/users',
-        requiredPermission: 'listar_usuarios',
-        colorClass: 'orange',
+        label: 'Mi Perfil',
+        icon: 'account_circle',
+        hint: 'Actualizar datos personales y configuración de la cuenta.',
+        route: '/dashboard/account',
+        colorClass: 'gray',
       },
       {
         label: 'Crear Rol',
@@ -126,12 +117,12 @@ export class DashboardHomeComponent implements OnInit {
         colorClass: 'red',
       },
       {
-        label: 'Administrar Roles',
-        icon: 'admin_panel_settings',
-        hint: 'Ajustar privilegios y estructura de autorización.',
-        route: '/dashboard/roles',
-        requiredPermission: 'listar_roles',
-        colorClass: 'red',
+        label: 'Crear Usuario',
+        icon: 'person_add',
+        hint: 'Registrar una nueva cuenta de acceso en la plataforma.',
+        route: '/dashboard/users/new',
+        requiredPermission: 'crear_usuario',
+        colorClass: 'purple',
       },
       {
         label: 'Crear Módulo',
@@ -142,35 +133,12 @@ export class DashboardHomeComponent implements OnInit {
         colorClass: 'blue',
       },
       {
-        label: 'Administrar Módulos',
-        icon: 'view_module',
-        hint: 'Gestionar el catálogo de módulos disponibles.',
-        route: '/dashboard/modules',
-        requiredPermission: 'listar_modulos',
-        colorClass: 'blue',
-      },
-      {
-        label: 'Administrar Permisos',
-        icon: 'security',
-        hint: 'Controlar permisos detallados por proceso y módulo.',
-        route: '/dashboard/permissions',
-        requiredPermission: 'listar_permisos',
-        colorClass: 'green',
-      },
-      {
         label: 'Crear Permiso',
         icon: 'vpn_key',
         hint: 'Registrar una nueva capacidad operativa o restricción.',
         route: '/dashboard/permissions/new',
         requiredPermission: 'crear_permiso',
         colorClass: 'green',
-      },
-      {
-        label: 'Mi Perfil',
-        icon: 'account_circle',
-        hint: 'Actualizar datos personales y configuración de la cuenta.',
-        route: '/dashboard/account',
-        colorClass: 'gray',
       },
     ];
 
