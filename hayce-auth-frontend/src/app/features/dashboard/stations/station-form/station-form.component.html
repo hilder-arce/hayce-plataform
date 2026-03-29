@@ -68,9 +68,11 @@
           </div>
         </div>
 
-        <div class="flex items-center justify-end gap-3 pt-4">
+        <div class="flex w-full flex-col-reverse gap-3 sm:flex-row sm:justify-end md:w-auto">
           <app-button
-            variant="ghost"
+            variant="secondary"
+            [fullWidth]="true"
+            class="sm:w-auto"
             [disabled]="loading()"
             routerLink="/dashboard/stations"
           >
@@ -78,6 +80,8 @@
           </app-button>
           <app-button
             variant="primary"
+            [fullWidth]="true"
+            class="sm:w-auto"
             type="submit"
             [loading]="loading()"
           >

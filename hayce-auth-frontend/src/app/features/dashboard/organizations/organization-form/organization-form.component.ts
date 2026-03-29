@@ -80,7 +80,10 @@ type OrganizationFormGroup = FormGroup<{
               />
             </div>
 
-            <div class="flex justify-end gap-3 px-5 py-5">
+            <div class="flex w-full flex-col gap-3 sm:flex-row sm:justify-end md:w-auto px-5 py-5 sm:px-6 sm:py-6">
+              <app-button type="submit" variant="primary" class="w-full sm:w-auto" [loading]="loading()">
+                {{ isEditMode() ? 'Guardar cambios' : 'Crear organización' }}
+              </app-button>
               <a
                 routerLink="/dashboard/organizations"
                 class="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50 hover:text-slate-900"
@@ -88,9 +91,6 @@ type OrganizationFormGroup = FormGroup<{
                 Cancelar
               </a>
 
-              <app-button type="submit" variant="primary" [loading]="loading()">
-                {{ isEditMode() ? 'Guardar cambios' : 'Crear organización' }}
-              </app-button>
             </div>
           </form>
         }

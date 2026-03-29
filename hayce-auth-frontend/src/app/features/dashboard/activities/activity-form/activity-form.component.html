@@ -73,10 +73,12 @@
           </div>
         </div>
 
-        <div class="flex items-center justify-end gap-3 pt-6 border-t border-slate-100">
+        <div class="flex w-full flex-col-reverse gap-3 sm:flex-row sm:justify-end md:w-auto">
           <app-button
             type="button"
-            variant="ghost"
+            variant="secondary"
+            [fullWidth]="true"
+            class="sm:w-auto"
             routerLink="/dashboard/activities"
             [disabled]="saving()"
           >
@@ -85,6 +87,8 @@
           <app-button
             type="submit"
             variant="primary"
+            [fullWidth]="true"
+            class="sm:w-auto"
             [loading]="saving()"
             icon="save"
           >

@@ -68,23 +68,28 @@
           }
 
           @if (editMode() === 'profile') {
-            <div class="flex flex-col gap-3 pt-2 sm:flex-row sm:justify-end">
-              <app-button
-                variant="secondary"
-                [disabled]="loadingProfile()"
-                (onClick)="cancelEdit()"
-              >
-                Cancelar
-              </app-button>
-
+            <div class="flex flex-col gap-3 pt-2 sm:flex-row sm:justify-end md-auto">
               <app-button
                 icon="save"
+                variant="primary"
+                [fullWidth]="true"
+                class="sm:w-auto"
                 [loading]="loadingProfile()"
                 [disabled]="profileForm.invalid || !hasProfileChanged() || loadingProfile()"
                 (onClick)="updateProfile()"
               >
                 Guardar cambios
               </app-button>
+              <app-button
+                variant="secondary"
+                [fullWidth]="true"
+                class="sm:w-auto"
+                [disabled]="loadingProfile()"
+                (onClick)="cancelEdit()"
+              >
+                Cancelar
+              </app-button>
+
             </div>
           }
         </form>
@@ -156,15 +161,9 @@
 
             <div class="flex flex-col gap-3 pt-2 sm:flex-row sm:justify-end">
               <app-button
-                variant="secondary"
-                [disabled]="loadingPassword()"
-                (onClick)="cancelEdit()"
-              >
-                Cancelar
-              </app-button>
-
-              <app-button
-                variant="outline"
+                variant="primary"
+                [fullWidth]="true"
+                class="sm:w-auto"
                 icon="security"
                 [loading]="loadingPassword()"
                 [disabled]="passwordForm.invalid || loadingPassword()"
@@ -172,6 +171,16 @@
               >
                 Actualizar clave
               </app-button>
+              <app-button
+                variant="secondary"
+                [fullWidth]="true"
+                class="sm:w-auto"
+                [disabled]="loadingPassword()"
+                (onClick)="cancelEdit()"
+              >
+                Cancelar
+              </app-button>
+
             </div>
           </form>
         } @else {
