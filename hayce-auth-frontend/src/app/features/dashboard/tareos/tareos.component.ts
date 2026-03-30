@@ -412,10 +412,20 @@ export class TareosComponent implements OnInit {
         );
       } else {
         if (isMobile) {
+          this.alertService.show(
+              'Preparando impresión...',
+              'info'
+            );
           doc.autoPrint();
 
-          const hpdf = doc.output('bloburl');
-          window.open(hpdf.toString(), '_blank');
+          const pdfBlob = doc.output('blob');
+          const blobUrl = URL.createObjectURL(pdfBlob);
+
+          const printWindow = window.open(blobUrl, '_blank');
+
+          setTimeout(() => {
+            printWindow?.print();
+          }, 1500);
         } else {
           const pdfBlob = doc.output('blob');
           const pdfUrl = URL.createObjectURL(pdfBlob);
