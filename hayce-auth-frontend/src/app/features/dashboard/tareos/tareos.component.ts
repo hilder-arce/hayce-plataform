@@ -185,6 +185,14 @@ export class TareosComponent implements OnInit {
     accion: 'download' | 'print' = 'download'
   ): Promise<void> {
 
+    if (this.loading()) {
+      this.alertService.show(
+        'Espera a que los tareos terminen de cargar',
+        'info',
+      );
+      return;
+    }
+
     try {
       const doc = new jsPDF('l', 'mm', 'a4');
 
@@ -485,6 +493,13 @@ export class TareosComponent implements OnInit {
 
   //IMPORTAR A CSV
   async exportarExcelTareos(listaTareos: any[]): Promise<void> {
+    if (this.loading()) {
+      this.alertService.show(
+        'Espera a que los tareos terminen de cargar',
+        'info',
+      );
+      return;
+    }
     try {
       const data = listaTareos.map((tareo) => ({
         FECHA: tareo.fecha
