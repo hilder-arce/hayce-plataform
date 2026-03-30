@@ -196,6 +196,12 @@ export const routes: Routes = [
         data: { permissions: ['listar_trabajadores'] },
       },
       {
+        path: 'workers/edit/:id',
+        loadComponent: () => import('./features/dashboard/workers/worker-form/worker-form.component').then((m) => m.WorkerFormComponent),
+        canActivate: [permissionGuard],
+        data: { permissions: ['actualizar_trabajador', 'listar_trabajadores'] },
+      },
+      {
         path: 'workers/new',
         loadComponent: () => import('./features/dashboard/workers/worker-form/worker-form.component').then((m) => m.WorkerFormComponent),
         canActivate: [permissionGuard],
