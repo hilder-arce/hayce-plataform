@@ -178,6 +178,8 @@ export class TareosComponent implements OnInit {
     });
   }
 
+  
+
   async generarPDFTareos(
     listaTareos: any[],
     accion: 'download' | 'print' = 'download'
@@ -399,6 +401,7 @@ export class TareosComponent implements OnInit {
 
       /* ================= FINALIZACIÓN ================= */
       const fileName = `Reporte-tareos-${new Date().getTime()}.pdf`;
+      const isMobile = window.innerWidth < 768;
 
       if (accion === 'download') {
         doc.save(fileName);
@@ -408,48 +411,56 @@ export class TareosComponent implements OnInit {
           'success'
         );
       } else {
-        const pdfBlob = doc.output('blob');
-        const pdfUrl = URL.createObjectURL(pdfBlob);
+        if (isMobile) {
+          doc.autoPrint();
 
-        const iframe = document.createElement('iframe');
-        iframe.style.position = 'fixed';
-        iframe.style.right = '0';
-        iframe.style.bottom = '0';
-        iframe.style.width = '0';
-        iframe.style.height = '0';
-        iframe.style.border = '0';
-        iframe.style.visibility = 'hidden';
-
-        iframe.src = pdfUrl;
-
-        document.body.appendChild(iframe);
-
-        iframe.onload = () => {
-          this.alertService.show(
-            'Preparando impresión...',
-            'info'
-          );
-
-          setTimeout(() => {
-            iframe.contentWindow?.focus();
-
-            // Esperar un poco más para asegurar que el PDF cargó completamente
+          const hpdf = doc.output('bloburl');
+          window.open(hpdf.toString(), '_blank');
+        } else {
+          const pdfBlob = doc.output('blob');
+          const pdfUrl = URL.createObjectURL(pdfBlob);
+          
+          const iframe = document.createElement('iframe');
+          iframe.style.position = 'fixed';
+          iframe.style.right = '0';
+          iframe.style.bottom = '0';
+          iframe.style.width = '0';
+          iframe.style.height = '0';
+          iframe.style.border = '0';
+          iframe.style.visibility = 'hidden';
+          
+          iframe.src = pdfUrl;
+          
+          document.body.appendChild(iframe);
+          
+          iframe.onload = () => {
+            this.alertService.show(
+              'Preparando impresión...',
+              'info'
+            );
+            
             setTimeout(() => {
-              iframe.contentWindow?.print();
-
-              this.alertService.show(
-                'Abriendo diálogo de impresión...',
-                'success'
-              );
-
+              iframe.contentWindow?.focus();
+              
+              // Esperar un poco más para asegurar que el PDF cargó completamente
               setTimeout(() => {
-                document.body.removeChild(iframe);
-                URL.revokeObjectURL(pdfUrl);
-              }, 2000);
-            }, 1200);
-
-          }, 800);
-        };
+                iframe.contentWindow?.print();
+                
+                this.alertService.show(
+                  'Abriendo diálogo de impresión...',
+                  'success'
+                );
+                
+                setTimeout(() => {
+                  document.body.removeChild(iframe);
+                  URL.revokeObjectURL(pdfUrl);
+                }, 2000);
+              }, 1200);
+              
+            }, 800);
+            
+          };
+        }
       }
 
     } catch (error) {
