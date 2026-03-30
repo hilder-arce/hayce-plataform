@@ -1,4 +1,4 @@
-<div class="mx-auto w-full max-w-5xl px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+<div class="mx-auto w-full max-w-5xl space-y-6 px-4 py-6 sm:px-6 lg:px-8">
 
   <!-- CELEBRACION -->
   @if (roleCelebration(); as celebration) {
@@ -26,20 +26,45 @@
   }
 
   <!-- HEADER -->
-  <section class="flex flex-col gap-2">
+  <section class="flex flex-col gap-1 py-2 sm:gap-1.5">
+    <div class="inline-flex items-center gap-2 text-[1.15rem] font-normal leading-none text-slate-800 sm:text-[1.22rem]">
+      <svg
+        class="h-9 w-9 shrink-0 sm:h-10 sm:w-10"
+        viewBox="0 0 24 24"
+        fill="none"
+        aria-hidden="true"
+      >
+        <path
+          d="M12 2.5c.8 4.1 1.9 5.2 6 6-4.1.8-5.2 1.9-6 6-.8-4.1-1.9-5.2-6-6 4.1-.8 5.2-1.9 6-6Z"
+          fill="url(#homeSparkleGradient)"
+        />
+        <path
+          d="M17.6 11.8c.3 1.5.7 1.9 2.2 2.2-1.5.3-1.9.7-2.2 2.2-.3-1.5-.7-1.9-2.2-2.2 1.5-.3 1.9-.7 2.2-2.2Z"
+          fill="#5B8CFF"
+        />
+        <defs>
+          <linearGradient id="homeSparkleGradient" x1="5.5" y1="4" x2="18.5" y2="18.5" gradientUnits="userSpaceOnUse">
+            <stop stop-color="#46C2FF" />
+            <stop offset="0.35" stop-color="#7A5CFF" />
+            <stop offset="0.7" stop-color="#FF6FAE" />
+            <stop offset="1" stop-color="#FFB347" />
+          </linearGradient>
+        </defs>
+      </svg>
 
-    <p class="text-sm text-slate-500">
-      {{ getGreeting() }}, {{ currentUser()?.nombre }}
-    </p>
+      <p class="inline-flex flex-wrap items-baseline gap-x-1.5">
+        <span>Hola,</span>
+        <span>{{ currentUser()?.nombre }}</span>
+      </p>
+    </div>
 
-    <h1 class="text-3xl sm:text-4xl font-semibold text-slate-900">
-      ¿Empezemos?
+    <h1 class="max-w-3xl text-[2.35rem] font-normal leading-[1.02] tracking-[-0.04em] text-slate-900 sm:text-[2.8rem]">
+      ¿Empezémos?
     </h1>
 
-    <p class="text-sm sm:text-base text-slate-500 max-w-md">
+    <p class="max-w-2xl text-sm leading-6 text-slate-500 sm:text-[0.98rem]">
       Accede rápidamente a las funciones principales del sistema.
     </p>
-
   </section>
 
   <!-- ACTIONS -->
@@ -63,7 +88,7 @@
     >
 
       <div
-        class="flex items-center justify-center h-8 w-8 sm:h-12 sm:w-12 rounded-full sm:rounded-lg shrink-0"
+        class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full sm:h-12 sm:w-12 sm:rounded-lg"
         [ngClass]="{
           'bg-blue-50 text-blue-600': action.colorClass === 'blue',
           'bg-green-50 text-green-600': action.colorClass === 'green',
@@ -76,11 +101,11 @@
         <i class="icon text-base sm:text-xl">{{ action.icon }}</i>
       </div>
 
-      <span class="text-sm sm:text-base font-medium text-slate-900 whitespace-nowrap">
+      <span class="whitespace-nowrap text-sm font-medium text-slate-900 sm:text-base">
         {{ action.label }}
       </span>
 
-      <i class="icon hidden sm:inline-flex ml-auto text-slate-300">
+      <i class="icon ml-auto hidden text-slate-300 sm:inline-flex">
         chevron_right
       </i>
 

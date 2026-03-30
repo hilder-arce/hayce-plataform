@@ -7,11 +7,23 @@ import { AuthService } from '../../../core/services/auth.service';
 import { RoleCelebrationService } from '../../../core/services/role-celebration.service';
 
 interface QuickAction {
+  key:
+    | 'profile'
+    | 'create-role'
+    | 'create-user'
+    | 'create-module'
+    | 'create-permission'
+    | 'create-organization'
+    | 'create-station'
+    | 'create-activity'
+    | 'create-worker'
+    | 'create-tareo';
   label: string;
   icon: string;
   hint: string;
   route: string;
-  requiredPermission?: string;
+  requiredPermissions?: string[];
+  superAdminOnly?: boolean;
   colorClass: 'blue' | 'green' | 'orange' | 'purple' | 'red' | 'gray';
 }
 
@@ -90,7 +102,7 @@ export class DashboardHomeComponent implements OnInit {
 
   protected getGreeting(): string {
     const hour = this.today.getHours();
-    
+
     if (hour < 12) return 'Buenos días';
     if (hour < 19) return 'Buenas tardes';
     return 'Buenas noches';
@@ -102,48 +114,119 @@ export class DashboardHomeComponent implements OnInit {
   private buildQuickActions(): QuickAction[] {
     const baseActions: QuickAction[] = [
       {
+        key: 'create-tareo',
+        label: 'Crear Tareo',
+        icon: 'fact_check',
+        hint: 'Generar un nuevo tareo para el control operativo del equipo.',
+        route: '/dashboard/tareos/new',
+        requiredPermissions: ['crear_tareo'],
+        colorClass: 'purple',
+      },
+      {
+        key: 'create-activity',
+        label: 'Crear Actividad',
+        icon: 'playlist_add',
+        hint: 'Configurar una nueva actividad y vincularla con sus estaciones.',
+        route: '/dashboard/activities/new',
+        requiredPermissions: ['crear_actividad', 'listar_estaciones'],
+        colorClass: 'blue',
+      },
+      {
+        key: 'create-station',
+        label: 'Crear Estación',
+        icon: 'add_location_alt',
+        hint: 'Registrar una estación operativa dentro de la estructura activa.',
+        route: '/dashboard/stations/new',
+        requiredPermissions: ['crear_estacion'],
+        colorClass: 'orange',
+      },
+      {
+        key: 'create-worker',
+        label: 'Crear Trabajador',
+        icon: 'badge',
+        hint: 'Registrar un nuevo trabajador para la operación diaria.',
+        route: '/dashboard/workers/new',
+        requiredPermissions: ['crear_trabajador'],
+        colorClass: 'green',
+      },
+      {
+        key: 'create-user',
+        label: 'Crear Usuario',
+        icon: 'person_add',
+        hint: 'Registrar una nueva cuenta de acceso en la plataforma.',
+        route: '/dashboard/users/new',
+        requiredPermissions: ['crear_usuario', 'listar_roles'],
+        colorClass: 'purple',
+      },
+      {
+        key: 'create-role',
+        label: 'Crear Rol',
+        icon: 'group_add',
+        hint: 'Definir un nuevo esquema de acceso para la operación.',
+        route: '/dashboard/roles/new',
+        requiredPermissions: ['crear_rol', 'listar_permisos'],
+        colorClass: 'red',
+      },
+      {
+        key: 'create-module',
+        label: 'Crear Módulo',
+        icon: 'app_registration',
+        hint: 'Incorporar un nuevo componente funcional al sistema.',
+        route: '/dashboard/modules/new',
+        requiredPermissions: ['crear_modulo'],
+        colorClass: 'blue',
+      },
+      {
+        key: 'create-permission',
+        label: 'Crear Permiso',
+        icon: 'vpn_key',
+        hint: 'Registrar una nueva capacidad operativa o restricción.',
+        route: '/dashboard/permissions/new',
+        requiredPermissions: ['crear_permiso', 'listar_modulos'],
+        colorClass: 'green',
+      },
+      {
+        key: 'create-organization',
+        label: 'Crear Organización',
+        icon: 'domain_add',
+        hint: 'Crear una nueva organización y preparar su espacio de trabajo.',
+        route: '/dashboard/organizations/new',
+        superAdminOnly: true,
+        colorClass: 'orange',
+      },
+      {
+        key: 'profile',
         label: 'Mi Perfil',
         icon: 'account_circle',
         hint: 'Actualizar datos personales y configuración de la cuenta.',
         route: '/dashboard/account',
         colorClass: 'gray',
       },
-      {
-        label: 'Crear Rol',
-        icon: 'group_add',
-        hint: 'Definir un nuevo esquema de acceso para la operación.',
-        route: '/dashboard/roles/new',
-        requiredPermission: 'crear_rol',
-        colorClass: 'red',
-      },
-      {
-        label: 'Crear Usuario',
-        icon: 'person_add',
-        hint: 'Registrar una nueva cuenta de acceso en la plataforma.',
-        route: '/dashboard/users/new',
-        requiredPermission: 'crear_usuario',
-        colorClass: 'purple',
-      },
-      {
-        label: 'Crear Módulo',
-        icon: 'app_registration',
-        hint: 'Incorporar un nuevo componente funcional al sistema.',
-        route: '/dashboard/modules/new',
-        requiredPermission: 'crear_modulo',
-        colorClass: 'blue',
-      },
-      {
-        label: 'Crear Permiso',
-        icon: 'vpn_key',
-        hint: 'Registrar una nueva capacidad operativa o restricción.',
-        route: '/dashboard/permissions/new',
-        requiredPermission: 'crear_permiso',
-        colorClass: 'green',
-      },
     ];
 
-    return baseActions.filter(
-      (action) => !action.requiredPermission || this.authService.hasPermission(action.requiredPermission),
-    );
+    const currentUser = this.currentUser();
+    if (currentUser?.esSuperAdmin) {
+      const allowedActions = new Set<QuickAction['key']>([
+        'profile',
+        'create-user',
+        'create-role',
+        'create-module',
+        'create-permission',
+        'create-organization',
+      ]);
+
+      return baseActions.filter((action) => allowedActions.has(action.key));
+    }
+
+    return baseActions.filter((action) => {
+      if (action.superAdminOnly) {
+        return false;
+      }
+
+      return (
+        !action.requiredPermissions ||
+        this.authService.hasAllPermissions(action.requiredPermissions)
+      );
+    });
   }
 }
