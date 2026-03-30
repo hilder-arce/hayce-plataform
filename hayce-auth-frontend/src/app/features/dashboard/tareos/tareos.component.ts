@@ -421,9 +421,9 @@ export class TareosComponent implements OnInit {
       } else {
         if (isMobile) {
           this.alertService.show(
-              'Preparando impresión...',
-              'info'
-            );
+            'Se abrió el PDF. Usa el botón compartir o imprimir del visor.',
+            'info',
+          );
           doc.autoPrint();
 
           const pdfBlob = doc.output('blob');
@@ -437,46 +437,48 @@ export class TareosComponent implements OnInit {
         } else {
           const pdfBlob = doc.output('blob');
           const pdfUrl = URL.createObjectURL(pdfBlob);
-          
+
           const iframe = document.createElement('iframe');
           iframe.style.position = 'fixed';
-          iframe.style.right = '0';
-          iframe.style.bottom = '0';
-          iframe.style.width = '0';
-          iframe.style.height = '0';
+          iframe.style.top = '0';
+          iframe.style.left = '0';
+          iframe.style.width = '1px';
+          iframe.style.height = '1px';
+          iframe.style.opacity = '0';
+          iframe.style.pointerEvents = 'none';
           iframe.style.border = '0';
-          iframe.style.visibility = 'hidden';
-          
+
           iframe.src = pdfUrl;
-          
+
           document.body.appendChild(iframe);
-          
+
           iframe.onload = () => {
             this.alertService.show(
               'Preparando impresión...',
               'info'
             );
-            
+
             setTimeout(() => {
-              iframe.contentWindow?.focus();
-              
-              // Esperar un poco más para asegurar que el PDF cargó completamente
-              setTimeout(() => {
-                iframe.contentWindow?.print();
-                
-                this.alertService.show(
-                  'Abriendo diálogo de impresión...',
-                  'success'
-                );
-                
+              const iframeWindow = iframe.contentWindow;
+
+              if (iframeWindow) {
+                iframeWindow.focus();
+
                 setTimeout(() => {
-                  document.body.removeChild(iframe);
-                  URL.revokeObjectURL(pdfUrl);
-                }, 2000);
-              }, 1200);
-              
-            }, 800);
-            
+                  iframeWindow.print();
+
+                  this.alertService.show(
+                    'Abriendo diálogo de impresión...',
+                    'success'
+                  );
+
+                  setTimeout(() => {
+                    document.body.removeChild(iframe);
+                    URL.revokeObjectURL(pdfUrl);
+                  }, 5000);
+                }, 1000);
+              }
+            }, 2000);
           };
         }
       }
