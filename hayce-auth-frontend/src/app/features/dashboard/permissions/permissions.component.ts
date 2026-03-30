@@ -55,6 +55,9 @@ export class PermissionsComponent implements OnInit {
   protected readonly canUpdate = this.authService.hasPermission('actualizar_permisos');
   protected readonly canDelete = this.authService.hasPermission('eliminar_permiso');
   protected readonly canRestore = this.authService.hasPermission('eliminar_permiso');
+  protected readonly isSuperAdmin = computed(
+    () => !!this.authService.currentUser()?.esSuperAdmin,
+  );
 
   // ==========================================
   // [ STREAM REACTIVO ] - NO APLICA EN ESTE COMPONENTE

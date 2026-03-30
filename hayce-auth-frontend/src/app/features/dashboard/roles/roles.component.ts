@@ -55,7 +55,10 @@ export class RolesComponent {
   protected readonly canCreate = this.authService.hasPermission('crear_rol');
   protected readonly canUpdate = this.authService.hasPermission('actualizar_rol');
   protected readonly canDelete = this.authService.hasPermission('eliminar_rol');
-  protected readonly canRestore = this.authService.hasPermission('eliminar_rol');
+  protected readonly canRestore = this.authService.hasPermission('restaurar_rol');
+  protected readonly isSuperAdmin = computed(
+    () => !!this.authService.currentUser()?.esSuperAdmin,
+  );
 
   // ==========================================
   // [ STREAM REACTIVO ] - NO APLICA EN ESTE COMPONENTE

@@ -105,11 +105,13 @@
       <thead class="bg-slate-50 text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
         <tr>
           <th class="px-6 py-4">Usuario</th>
-          <th class="px-6 py-4">Organizacion</th>
+          @if (isSuperAdmin()) {
+            <th class="px-6 py-4">Organizacion</th>
+          }
           <th class="px-6 py-4">Rol</th>
           <th class="px-6 py-4">Creado por</th>
           <th class="px-6 py-4">Estado</th>
-          <th class="px-6 py-4">Fecha alta</th>
+          <th class="px-6 py-4">Creado el</th>
           <th class="px-6 py-4 text-right">Acciones</th>
         </tr>
       </thead>
@@ -164,12 +166,14 @@
                 </div>
               </td>
 
-              <td class="px-6 py-4">
-                <div class="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-medium text-slate-700">
-                  <i class="icon text-sm text-slate-500">apartment</i>
-                  <span>{{ getOrganizationName(user) }}</span>
-                </div>
-              </td>
+              @if (isSuperAdmin()) {
+                <td class="px-6 py-4">
+                  <div class="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-medium text-slate-700">
+                    <i class="icon text-sm text-slate-500">apartment</i>
+                    <span>{{ getOrganizationName(user) }}</span>
+                  </div>
+                </td>
+              }
 
               <td class="px-6 py-4">
                 <div class="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-medium text-slate-700">

@@ -5,6 +5,7 @@ import { CreatePermissionDto } from './dto/create-permission.dto';
 import { UpdatePermissionDto } from './dto/update-permission.dto';
 import { Permission } from './entities/permission.entity';
 import { PermissionsService } from './permissions.service';
+import { AccessActor } from 'src/auth/authorization/access-control.service';
 
 @Resolver(() => Permission)
 export class PermissionsResolver {
@@ -21,8 +22,10 @@ export class PermissionsResolver {
 
   @Query(() => [Permission])
   @RequirePermission('listar_permisos')
-  permissions() {
-    return this.permissionsService.findAll();
+  permissions(
+    @CurrentUser() actor: { sub: string; nombre?: string; esSuperAdmin?: boolean },
+  ) {
+    return this.permissionsService.findAll(actor);
   }
 
   @Query(() => [Permission])

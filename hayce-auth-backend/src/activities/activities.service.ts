@@ -62,7 +62,7 @@ export class ActivitiesService {
       })
       .populate('organization')
       .populate('createdBy')
-      .sort({ createdAt: 1 })
+      .sort({ nombre: 1 })
       .exec();
   }
 

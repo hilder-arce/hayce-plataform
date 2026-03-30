@@ -85,7 +85,9 @@
           <th class="px-6 py-4">Modulo asociado</th>
           <th class="px-6 py-4">Alcance</th>
           <th class="px-6 py-4">Estado</th>
-          <th class="px-6 py-4 text-right">Acciones</th>
+          @if (isSuperAdmin()) {
+            <th class="px-6 py-4 text-right">Acciones</th>
+          }
         </tr>
       </thead>
 
@@ -160,40 +162,42 @@
                 </app-badge>
               </td>
 
-              <td class="px-6 py-4 text-right">
-                <div class="flex items-center justify-end gap-2">
-                  @if (canUpdate && permission.estado) {
-                    <app-button
+              @if (isSuperAdmin()) {
+                <td class="px-6 py-4 text-right">
+                  <div class="flex items-center justify-end gap-2">
+                    @if (canUpdate && permission.estado) {
+                      <app-button
                       variant="ghost"
                       size="sm"
                       icon="edit"
                       [routerLink]="['/dashboard/permissions/edit', permission._id]"
-                    />
-                  }
-
-                  @if (canDelete && permission.estado) {
-                    <app-button
+                      />
+                    }
+                    
+                    @if (canDelete && permission.estado) {
+                      <app-button
                       variant="ghost"
                       size="sm"
                       icon="block"
                       [disabled]="pendingId() === permission._id"
                       class="text-red-600 hover:bg-red-50 hover:text-red-700"
                       (onClick)="confirmDelete(permission)"
-                    />
-                  }
-
-                  @if (canRestore && !permission.estado) {
-                    <app-button
+                      />
+                    }
+                    
+                    @if (canRestore && !permission.estado) {
+                      <app-button
                       variant="ghost"
                       size="sm"
                       icon="restore"
                       [disabled]="pendingId() === permission._id"
                       class="text-green-600 hover:bg-green-50 hover:text-green-700"
                       (onClick)="confirmRestore(permission)"
-                    />
-                  }
-                </div>
-              </td>
+                      />
+                    }
+                  </div>
+                </td>
+              }
             </tr>
           }
         }

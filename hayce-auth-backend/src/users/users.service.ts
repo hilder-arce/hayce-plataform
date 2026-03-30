@@ -27,7 +27,6 @@ export class UsersService {
     @InjectModel(User.name) private readonly userModel: Model<User>,
     @InjectModel(Organization.name)
     private readonly organizationModel: Model<Organization>,
-    private readonly rolesService: RolesService,
     private readonly notificationsService: NotificationsService,
     private readonly accessControlService: AccessControlService,
   ) {}
@@ -146,7 +145,7 @@ export class UsersService {
 
     if (rol) {
       const nuevoRol = await this.accessControlService.validateRoleAssignment(actor, rol);
-      if (nuevoRol.organization?.toString() !== currentUser.organization?.toString()) {
+      if (nuevoRol.organization?.toString() !== currentUser.organization?._id.toString()) {
         throw new BadRequestException(
           'No puedes asignar un rol de otra organización',
         );

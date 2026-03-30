@@ -66,7 +66,7 @@ export class AccessControlService {
         ? actor.ownerAdminId?.toString?.() ?? ''
         : (actor as User).ownerAdmin?.toString?.() ?? '';
 
-    return this.isSuperAdmin(actor) || !!actorId && actorId === ownerAdminId;
+    return this.isSuperAdmin(actor) || (!!actorId && actorId === ownerAdminId);
   }
 
   ensureSameOrganization(
@@ -101,12 +101,14 @@ export class AccessControlService {
 
     const actorId =
       'sub' in actor ? actor.sub : actor._id?.toString?.() ?? '';
+      
     const actorOwnerAdminId =
       'ownerAdminId' in actor
-        ? actor.ownerAdminId
+        ? actor.ownerAdminId?.toString?.() ?? null
         : (actor as User).ownerAdmin?.toString?.() ?? null;
 
-    const targetOwnerAdminId = target.ownerAdmin?.toString?.() ?? null;
+    const targetOwnerAdminId = this.safeExtractId(target.ownerAdmin);
+
     if (actorOwnerAdminId && targetOwnerAdminId !== actorOwnerAdminId) {
       return false;
     }
@@ -115,10 +117,19 @@ export class AccessControlService {
       return true;
     }
 
-    const ancestryPath = target.ancestryPath?.map((id) => id.toString()) ?? [];
-    const createdById = target.createdBy?.toString?.() ?? null;
+    const ancestryPath = (target.ancestryPath ?? []).map((id) => this.safeExtractId(id)).filter(Boolean) as string[];
+    const createdById = this.safeExtractId(target.createdBy);
 
     return createdById === actorId || ancestryPath.includes(actorId);
+  }
+
+  private safeExtractId(value: any): string | null {
+    if (!value) return null;
+    if (value instanceof Types.ObjectId) return value.toString();
+    if (typeof value === 'string') return value;
+    if (value._id) return value._id.toString();
+    if (typeof value.toString === 'function') return value.toString();
+    return null;
   }
 
   extractPermissionNames(actor: User): string[] {

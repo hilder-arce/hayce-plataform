@@ -58,6 +58,9 @@ export class UsersComponent {
   readonly canUpdate = this.authService.hasPermission('actualizar_usuario');
   readonly canDelete = this.authService.hasPermission('eliminar_usuario');
   readonly canRestore = this.authService.hasPermission('eliminar_usuario');
+  protected readonly isSuperAdmin = computed(
+    () => !!this.authService.currentUser()?.esSuperAdmin,
+  );
 
   // ==========================================
   // [ STREAM REACTIVO ] - CONSULTA PRINCIPAL

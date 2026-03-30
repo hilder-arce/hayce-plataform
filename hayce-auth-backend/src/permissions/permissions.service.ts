@@ -67,12 +67,30 @@ export class PermissionsService {
   // ======================================================
   // [ READ ] - OBTENER LISTADO COMPLETO DE PERMISOS ACTIVOS
   // ======================================================
-  async findAll(): Promise<Permission[]> {
-    return await this.permissionModel
-      .find({ estado: true })
-      .select('-__v')
-      .populate('modulo', 'nombre descripcion estado _id')
-      .exec();
+  async findAll(actor: AccessActor): Promise<Permission[]> {
+
+    if (actor.esSuperAdmin) {
+      return await this.permissionModel
+        .find({ estado: true })
+        .select('-__v')
+        .populate('modulo', 'nombre descripcion estado _id')
+        .sort({ nombre: 1 })
+        .exec();
+    }
+
+    
+    const user = await this.userModel.findById(actor.sub).populate({
+      path: 'rol',
+      populate: {
+        path: 'permisos',
+        select: '-__v'
+      }
+    }).exec();
+
+    const misPermisos = (user?.rol as any)?.permisos || [];
+
+    return misPermisos.sort((a, b) => a.nombre.localeCompare(b.nombre));
+
   }
 
   // ======================================================
