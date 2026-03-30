@@ -14,27 +14,21 @@ export class StationsResolver {
   @RequirePermission('crear_estacion')
   createStation(
     @Args('input') input: CreateStationDto,
-    @CurrentUser()
-    user: { sub: string; organizationId?: string | null; esSuperAdmin?: boolean },
-  ) {
+@CurrentUser() user: { sub: string; nombre?: string; esSuperAdmin?: boolean }  ) {
     return this.stationsService.create(input, user);
   }
 
   @Query(() => [Station])
   @RequirePermission('listar_estaciones')
   stations(
-    @CurrentUser()
-    user: { sub: string; organizationId?: string | null; esSuperAdmin?: boolean },
-  ) {
+@CurrentUser() user: { sub: string; nombre?: string; esSuperAdmin?: boolean }  ) {
     return this.stationsService.findAll(user);
   }
 
   @Query(() => [Station])
   @RequirePermission('listar_estaciones')
   inactiveStations(
-    @CurrentUser()
-    user: { sub: string; organizationId?: string | null; esSuperAdmin?: boolean },
-  ) {
+@CurrentUser() user: { sub: string; nombre?: string; esSuperAdmin?: boolean }  ) {
     return this.stationsService.findAllInactive(user);
   }
 
@@ -42,9 +36,7 @@ export class StationsResolver {
   @RequirePermission('listar_estaciones')
   station(
     @Args('id') id: string,
-    @CurrentUser()
-    user: { sub: string; organizationId?: string | null; esSuperAdmin?: boolean },
-  ) {
+@CurrentUser() user: { sub: string; nombre?: string; esSuperAdmin?: boolean }  ) {
     return this.stationsService.findOne(id, user);
   }
 
@@ -52,9 +44,7 @@ export class StationsResolver {
   @RequirePermission('listar_estaciones')
   inactiveStation(
     @Args('id') id: string,
-    @CurrentUser()
-    user: { sub: string; organizationId?: string | null; esSuperAdmin?: boolean },
-  ) {
+@CurrentUser() user: { sub: string; nombre?: string; esSuperAdmin?: boolean }  ) {
     return this.stationsService.findOneInactive(id, user);
   }
 
@@ -63,9 +53,7 @@ export class StationsResolver {
   updateStation(
     @Args('id') id: string,
     @Args('input') input: UpdateStationDto,
-    @CurrentUser()
-    user: { sub: string; organizationId?: string | null; esSuperAdmin?: boolean },
-  ) {
+@CurrentUser() user: { sub: string; nombre?: string; esSuperAdmin?: boolean }  ) {
     return this.stationsService.update(id, input, user);
   }
 
@@ -73,9 +61,7 @@ export class StationsResolver {
   @RequirePermission('eliminar_estacion')
   removeStation(
     @Args('id') id: string,
-    @CurrentUser()
-    user: { sub: string; organizationId?: string | null; esSuperAdmin?: boolean },
-  ) {
+@CurrentUser() user: { sub: string; nombre?: string; esSuperAdmin?: boolean }  ) {
     return this.stationsService.remove(id, user);
   }
 
@@ -83,9 +69,7 @@ export class StationsResolver {
   @RequirePermission('eliminar_estacion')
   restoreStation(
     @Args('id') id: string,
-    @CurrentUser()
-    user: { sub: string; organizationId?: string | null; esSuperAdmin?: boolean },
-  ) {
+@CurrentUser() user: { sub: string; nombre?: string; esSuperAdmin?: boolean }  ) {
     return this.stationsService.restore(id, user);
   }
 }

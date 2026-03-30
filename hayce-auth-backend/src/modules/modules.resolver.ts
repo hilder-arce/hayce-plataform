@@ -14,8 +14,7 @@ export class ModulesResolver {
   @RequirePermission('crear_modulo')
   createModule(
     @Args('input') input: CreateModuleDto,
-    @CurrentUser() user: { sub: string; esSuperAdmin?: boolean },
-  ) {
+@CurrentUser() user: { sub: string; nombre?: string; esSuperAdmin?: boolean }  ) {
     return this.modulesService.create(input, user);
   }
 
@@ -48,8 +47,7 @@ export class ModulesResolver {
   updateModule(
     @Args('id') id: string,
     @Args('input') input: UpdateModuleDto,
-    @CurrentUser() user: { sub: string; esSuperAdmin?: boolean },
-  ) {
+@CurrentUser() user: { sub: string; nombre?: string; esSuperAdmin?: boolean }  ) {
     return this.modulesService.update(id, input, user);
   }
 
@@ -57,8 +55,7 @@ export class ModulesResolver {
   @RequirePermission('eliminar_modulo')
   removeModule(
     @Args('id') id: string,
-    @CurrentUser() user: { sub: string; esSuperAdmin?: boolean },
-  ) {
+@CurrentUser() user: { sub: string; nombre?: string; esSuperAdmin?: boolean }  ) {
     return this.modulesService.remove(id, user);
   }
 
@@ -66,8 +63,7 @@ export class ModulesResolver {
   @RequirePermission('eliminar_modulo')
   restoreModule(
     @Args('id') id: string,
-    @CurrentUser() user: { sub: string; esSuperAdmin?: boolean },
-  ) {
+@CurrentUser() user: { sub: string; nombre?: string; esSuperAdmin?: boolean }  ) {
     return this.modulesService.restore(id, user);
   }
 }

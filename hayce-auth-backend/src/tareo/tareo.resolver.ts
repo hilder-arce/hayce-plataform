@@ -14,18 +14,14 @@ export class TareoResolver {
   @RequirePermission('crear_tareo')
   createTareo(
     @Args('input') input: CreateTareoDto,
-    @CurrentUser()
-    user: { sub: string; organizationId?: string | null; esSuperAdmin?: boolean },
-  ) {
+@CurrentUser() user: { sub: string; nombre?: string; esSuperAdmin?: boolean }  ) {
     return this.tareoService.create(input, user);
   }
 
   @Query(() => [Tareo])
   @RequirePermission('listar_tareos')
   tareos(
-    @CurrentUser()
-    user: { sub: string; organizationId?: string | null; esSuperAdmin?: boolean },
-  ) {
+@CurrentUser() user: { sub: string; nombre?: string; esSuperAdmin?: boolean }  ) {
     return this.tareoService.findAll(user);
   }
 
@@ -33,9 +29,7 @@ export class TareoResolver {
   @RequirePermission('listar_tareos')
   tareo(
     @Args('id') id: string,
-    @CurrentUser()
-    user: { sub: string; organizationId?: string | null; esSuperAdmin?: boolean },
-  ) {
+@CurrentUser() user: { sub: string; nombre?: string; esSuperAdmin?: boolean }  ) {
     return this.tareoService.findOne(id, user);
   }
 
@@ -44,9 +38,7 @@ export class TareoResolver {
   updateTareo(
     @Args('id') id: string,
     @Args('input') input: UpdateTareoDto,
-    @CurrentUser()
-    user: { sub: string; organizationId?: string | null; esSuperAdmin?: boolean },
-  ) {
+@CurrentUser() user: { sub: string; nombre?: string; esSuperAdmin?: boolean }  ) {
     return this.tareoService.update(id, input, user);
   }
 
@@ -54,9 +46,7 @@ export class TareoResolver {
   @RequirePermission('eliminar_tareo')
   removeTareo(
     @Args('id') id: string,
-    @CurrentUser()
-    user: { sub: string; organizationId?: string | null; esSuperAdmin?: boolean },
-  ) {
+@CurrentUser() user: { sub: string; nombre?: string; esSuperAdmin?: boolean }  ) {
     return this.tareoService.remove(id, user);
   }
 
@@ -64,8 +54,7 @@ export class TareoResolver {
   @RequirePermission('eliminar_tareo')
   restoreTareo(
     @Args('id') id: string,
-    @CurrentUser()
-    user: { sub: string; organizationId?: string | null; esSuperAdmin?: boolean },
+    @CurrentUser() user: { sub: string; nombre?: string; esSuperAdmin?: boolean }
   ) {
     return this.tareoService.restore(id, user);
   }

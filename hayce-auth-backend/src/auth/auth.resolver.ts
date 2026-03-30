@@ -38,33 +38,32 @@ export class AuthResolver {
 
   @Mutation(() => MessageResponse)
   async logoutAll(
-    @CurrentUser() user: { sub: string },
-    @Context('req') req: Request,
+@CurrentUser() user: { sub: string; nombre?: string; esSuperAdmin?: boolean },    @Context('req') req: Request,
     @Context('res') res: Response,
   ) {
     return this.authService.logoutAll(user.sub, req, res);
   }
 
   @Query(() => AuthUserProfile)
-  async me(@CurrentUser() user: { sub: string }) {
+  async me(@CurrentUser() user: { sub: string; nombre?: string; esSuperAdmin?: boolean }) {
     const response = await this.authService.me(user.sub);
     return this.mapAuthUser(response.data.usuario);
   }
 
   @Query(() => [Session])
-  async mySessions(@CurrentUser() user: { sub: string }) {
+  async mySessions(@CurrentUser() user: { sub: string; nombre?: string; esSuperAdmin?: boolean }) {
     return this.authService.mySessions(user.sub);
   }
 
   @Query(() => [Session])
-  async allSessions(@CurrentUser() user: { sub: string; esSuperAdmin?: boolean }) {
+  async allSessions(@CurrentUser() user: { sub: string; nombre?: string; esSuperAdmin?: boolean }) {
     return this.authService.allSessions(user);
   }
 
   @Mutation(() => MessageResponse)
   async revokeSession(
     @Args('id') id: string,
-    @CurrentUser() user: { sub: string; esSuperAdmin?: boolean },
+    @CurrentUser() user: { sub: string; nombre?: string; esSuperAdmin?: boolean },
     @Context('req') req: Request,
     @Context('res') res: Response,
   ) {

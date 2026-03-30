@@ -24,8 +24,7 @@ export class ActivitiesResolver {
   @RequirePermission('listar_actividades')
   activities(
     @CurrentUser()
-    user: { sub: string; organizationId?: string | null; esSuperAdmin?: boolean },
-  ) {
+@CurrentUser() user: { sub: string; nombre?: string; esSuperAdmin?: boolean }  ) {
     return this.activitiesService.findAll(user);
   }
 
@@ -34,8 +33,7 @@ export class ActivitiesResolver {
   activitiesByStation(
     @Args('stationId') stationId: string,
     @CurrentUser()
-    user: { sub: string; organizationId?: string | null; esSuperAdmin?: boolean },
-  ) {
+@CurrentUser() user: { sub: string; nombre?: string; esSuperAdmin?: boolean }  ) {
     return this.activitiesService.findByStation(stationId, user);
   }
 
@@ -43,8 +41,7 @@ export class ActivitiesResolver {
   @RequirePermission('listar_actividades')
   inactiveActivities(
     @CurrentUser()
-    user: { sub: string; organizationId?: string | null; esSuperAdmin?: boolean },
-  ) {
+@CurrentUser() user: { sub: string; nombre?: string; esSuperAdmin?: boolean }  ) {
     return this.activitiesService.findAllInactive(user);
   }
 
@@ -53,8 +50,7 @@ export class ActivitiesResolver {
   activity(
     @Args('id') id: string,
     @CurrentUser()
-    user: { sub: string; organizationId?: string | null; esSuperAdmin?: boolean },
-  ) {
+@CurrentUser() user: { sub: string; nombre?: string; esSuperAdmin?: boolean }  ) {
     return this.activitiesService.findOne(id, user);
   }
 
@@ -63,8 +59,7 @@ export class ActivitiesResolver {
   inactiveActivity(
     @Args('id') id: string,
     @CurrentUser()
-    user: { sub: string; organizationId?: string | null; esSuperAdmin?: boolean },
-  ) {
+@CurrentUser() user: { sub: string; nombre?: string; esSuperAdmin?: boolean }  ) {
     return this.activitiesService.findOneInactive(id, user);
   }
 
@@ -74,8 +69,7 @@ export class ActivitiesResolver {
     @Args('id') id: string,
     @Args('input') input: UpdateActivityDto,
     @CurrentUser()
-    user: { sub: string; organizationId?: string | null; esSuperAdmin?: boolean },
-  ) {
+@CurrentUser() user: { sub: string; nombre?: string; esSuperAdmin?: boolean }  ) {
     return this.activitiesService.update(id, input, user);
   }
 
@@ -84,8 +78,7 @@ export class ActivitiesResolver {
   removeActivity(
     @Args('id') id: string,
     @CurrentUser()
-    user: { sub: string; organizationId?: string | null; esSuperAdmin?: boolean },
-  ) {
+@CurrentUser() user: { sub: string; nombre?: string; esSuperAdmin?: boolean }  ) {
     return this.activitiesService.remove(id, user);
   }
 
@@ -94,8 +87,7 @@ export class ActivitiesResolver {
   restoreActivity(
     @Args('id') id: string,
     @CurrentUser()
-    user: { sub: string; organizationId?: string | null; esSuperAdmin?: boolean },
-  ) {
+@CurrentUser() user: { sub: string; nombre?: string; esSuperAdmin?: boolean }  ) {
     return this.activitiesService.restore(id, user);
   }
 }

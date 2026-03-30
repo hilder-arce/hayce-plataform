@@ -15,8 +15,7 @@ export class NotificationsResolver {
 
   @Query(() => NotificationsPage)
   myNotifications(
-    @CurrentUser() user: { sub: string },
-    @Args() args: PaginationArgs,
+@CurrentUser() user: { sub: string; nombre?: string; esSuperAdmin?: boolean },    @Args() args: PaginationArgs,
   ) {
     return this.notificationsService.findMyNotifications(
       user.sub,
@@ -27,7 +26,7 @@ export class NotificationsResolver {
   }
 
   @Query(() => UnreadNotificationsCount)
-  unreadNotifications(@CurrentUser() user: { sub: string }) {
+  unreadNotifications(@CurrentUser() user: { sub: string; nombre?: string; esSuperAdmin?: boolean }) {
     return this.notificationsService.countUnread(user.sub);
   }
 
@@ -37,7 +36,7 @@ export class NotificationsResolver {
   }
 
   @Mutation(() => MessageResponse)
-  markAllNotificationsAsRead(@CurrentUser() user: { sub: string }) {
+  markAllNotificationsAsRead(@CurrentUser() user: { sub: string; nombre?: string; esSuperAdmin?: boolean }) {
     return this.notificationsService.markAllAsRead(user.sub);
   }
 

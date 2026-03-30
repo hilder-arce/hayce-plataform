@@ -14,19 +14,18 @@ export class OrganizationsResolver {
   @Mutation(() => Organization)
   createOrganization(
     @Args('input') input: CreateOrganizationDto,
-    @CurrentUser() user: { sub: string; esSuperAdmin?: boolean },
-  ) {
+@CurrentUser() user: { sub: string; nombre?: string; esSuperAdmin?: boolean }  ) {
     return this.organizationsService.create(input, user);
   }
 
   @Query(() => [Organization])
-  organizations(@CurrentUser() user: { sub: string; esSuperAdmin?: boolean }) {
+  organizations(@CurrentUser() user: { sub: string; nombre?: string; esSuperAdmin?: boolean }) {
     return this.organizationsService.findAll(user);
   }
 
   @Query(() => [Organization])
   inactiveOrganizations(
-    @CurrentUser() user: { sub: string; esSuperAdmin?: boolean },
+    @CurrentUser() user: { sub: string; nombre?: string; esSuperAdmin?: boolean },
   ) {
     return this.organizationsService.findAllInactive(user);
   }
@@ -34,7 +33,7 @@ export class OrganizationsResolver {
   @Query(() => Organization)
   organization(
     @Args('id') id: string,
-    @CurrentUser() user: { sub: string; esSuperAdmin?: boolean },
+    @CurrentUser() user: { sub: string; nombre?: string; esSuperAdmin?: boolean },
   ) {
     return this.organizationsService.findOne(id, user);
   }
@@ -43,7 +42,7 @@ export class OrganizationsResolver {
   updateOrganization(
     @Args('id') id: string,
     @Args('input') input: UpdateOrganizationDto,
-    @CurrentUser() user: { sub: string; esSuperAdmin?: boolean },
+    @CurrentUser() user: { sub: string; nombre?: string; esSuperAdmin?: boolean },
   ) {
     return this.organizationsService.update(id, input, user);
   }
@@ -51,7 +50,7 @@ export class OrganizationsResolver {
   @Mutation(() => Organization)
   removeOrganization(
     @Args('id') id: string,
-    @CurrentUser() user: { sub: string; esSuperAdmin?: boolean },
+    @CurrentUser() user: { sub: string; nombre?: string; esSuperAdmin?: boolean },
   ) {
     return this.organizationsService.remove(id, user);
   }
@@ -59,7 +58,7 @@ export class OrganizationsResolver {
   @Mutation(() => Organization)
   restoreOrganization(
     @Args('id') id: string,
-    @CurrentUser() user: { sub: string; esSuperAdmin?: boolean },
+    @CurrentUser() user: { sub: string; nombre?: string; esSuperAdmin?: boolean },
   ) {
     return this.organizationsService.restore(id, user);
   }
